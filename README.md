@@ -22,16 +22,18 @@ Open [http://localhost:3000/deals](http://localhost:3000/deals).
 5. Click **Generate Instagram Post**.
 6. Edit or copy the caption, and download the generated 1080×1350 PNG.
 
-The project starts with realistic mock data. Set `FLIGHT_PROVIDER=amadeus` after adding Amadeus credentials to switch the same scanner button and CLI command to live airfare discovery.
+The project starts with realistic mock data. Set `FLIGHT_PROVIDER=serpapi` after adding a SerpApi key to switch the same scanner button and CLI command to live airfare discovery.
 
 ## Live airfare scanner
 
-1. Create a free app in the [Amadeus for Developers dashboard](https://developers.amadeus.com/).
-2. Copy its **API Key** and **API Secret** into `.env.local` as `AMADEUS_API_KEY` and `AMADEUS_API_SECRET`.
-3. Set `FLIGHT_PROVIDER=amadeus` and leave `AMADEUS_ENV=test` while developing.
+1. Create a free [SerpApi account](https://serpapi.com/users/sign_up).
+2. Copy the private API key shown in the account dashboard into `.env.local` as `SERPAPI_API_KEY`.
+3. Set `FLIGHT_PROVIDER=serpapi`.
 4. Restart `npm run dev`, then click **Run live scan**, or run `npm run scan`.
 
-The scanner discovers cheap destinations from SFO, SJC, and OAK, checks current offers when available, retrieves median price metrics for scoring, and saves candidates plus observations to Supabase. Amadeus test mode contains a limited subset of data; production mode is needed for broad real-time coverage. Every candidate remains `needs_review` until a human verifies it.
+The scanner uses three Google Travel Explore requests—one each for SFO, SJC, and OAK—and saves up to 12 real flexible-date candidates plus raw observations to Supabase. It builds historical route medians after three observations for scoring. Every candidate still requires human verification before publishing.
+
+Amadeus support remains in the code as an optional provider, but Amadeus's new Self-Service onboarding has been decommissioned and is not the recommended setup for this MVP.
 
 ## Supabase setup
 

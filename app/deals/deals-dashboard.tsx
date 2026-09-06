@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import type { FlightDeal } from '../../lib/deals';
 import SignOutButton from '../sign-out-button';
 
-type Props = { deals: FlightDeal[]; scanProvider: 'mock' | 'amadeus' };
+type Props = { deals: FlightDeal[]; scanProvider: 'mock' | 'amadeus' | 'serpapi' };
 type SortMode = 'score' | 'price' | 'savings';
 
 const nav = [
@@ -17,6 +17,8 @@ const nav = [
 ];
 
 export default function DealsDashboard({ deals, scanProvider }: Props) {
+  const liveScanner = scanProvider !== 'mock';
+  const providerLabel = scanProvider === 'serpapi' ? 'GOOGLE TRAVEL FARES' : scanProvider === 'amadeus' ? 'AMADEUS FARES' : 'MOCK FARES';
   const router = useRouter();
   const [sortMode, setSortMode] = useState<SortMode>('score');
   const [origin, setOrigin] = useState('All airports');
@@ -32,7 +34,7 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
       const result = await response.json() as { candidatesFound?: number; observationsSaved?: number; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The test scan failed.');
       setLastRun('just now');
-      setScanMessage(`${scanProvider === 'amadeus' ? 'Live' : 'Test'} scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
+      setScanMessage(`${liveScanner ? 'Live' : 'Test'} scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
       router.refresh();
     } catch (error) {
       setScanMessage(error instanceof Error ? error.message : 'The test scan failed.');
@@ -67,7 +69,7 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
         </nav>
         <div className="scan-card">
           <span className="pulse" />
-          <div><strong>{scanProvider === 'amadeus' ? 'Live scanner ready' : 'Test scanner ready'}</strong><small>Last run {lastRun}</small></div>
+          <div><strong>{liveScanner ? 'Live scanner ready' : 'Test scanner ready'}</strong><small>Last run {lastRun}</small></div>
         </div>
         <div className="sidebar-user">
           <span>PL</span><div><strong>Peter</strong><small>Administrator</small></div><b>•••</b>
@@ -83,11 +85,11 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
         <div className="content-wrap">
           <section className="page-intro">
             <div>
-              <div className="eyebrow"><span className="live-dot" />LIVE DATABASE · {scanProvider === 'amadeus' ? 'AMADEUS FARES' : 'MOCK FARES'}</div>
+              <div className="eyebrow"><span className="live-dot" />LIVE DATABASE · {providerLabel}</div>
               <h1>Flight deals worth checking.</h1>
               <p>Freshly scored fares from SFO, SJC, and OAK—ready for a quick human review.</p>
             </div>
-            <button className="scan-button" onClick={runScan} disabled={scanning}><span>↻</span> {scanning ? 'Scanning…' : scanProvider === 'amadeus' ? 'Run live scan' : 'Run test scan'}</button>
+            <button className="scan-button" onClick={runScan} disabled={scanning}><span>↻</span> {scanning ? 'Scanning…' : liveScanner ? 'Run live scan' : 'Run test scan'}</button>
           </section>
 
           {scanMessage && <p className="scan-result" role="status">{scanMessage}</p>}
@@ -122,7 +124,7 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
               ))}
             </div>
           </section>
-          <footer><span>{scanProvider === 'amadeus' ? 'Amadeus data · Verify before posting' : 'Mock data · For development only'}</span><span>Prices last refreshed {lastRun}</span></footer>
+          <footer><span>{liveScanner ? 'Live provider data · Verify before posting' : 'Mock data · For development only'}</span><span>Prices last refreshed {lastRun}</span></footer>
         </div>
       </section>
     </main>

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { AmadeusFlightDataProvider } from '../lib/providers/amadeus-provider.ts';
+import { SerpApiFlightDataProvider } from '../lib/providers/serpapi-provider.ts';
 import { scoreDeal } from '../lib/scoring.ts';
 
 function json(value: unknown, status = 200) {
@@ -93,4 +94,37 @@ assert.deepEqual(scoreDeal({ currentPrice: 399, typicalPrice: 800, nonstop: true
   score: 85,
 });
 
-console.log('Scanner tests passed: Amadeus normalization and deal scoring are working.');
+let serpApiRequestCount = 0;
+const fakeSerpApiFetch: typeof fetch = async (input) => {
+  serpApiRequestCount += 1;
+  const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input : input.url);
+  const origin = url.searchParams.get('departure_id') ?? 'SFO';
+  assert.equal(url.searchParams.get('engine'), 'google_travel_explore');
+  assert.equal(url.searchParams.get('api_key'), 'private-key');
+  return json({
+    destinations: [{
+      destination_id: '/m/05qtj',
+      name: 'Honolulu',
+      country: 'United States',
+      destination_airport: { code: 'HNL' },
+      start_date: '2026-10-10',
+      end_date: '2026-10-17',
+      flight_price: origin === 'OAK' ? 190 : origin === 'SJC' ? 198 : 220,
+      number_of_stops: 0,
+      airline: 'Southwest',
+      airline_code: 'WN',
+      link: 'https://www.google.com/travel/explore',
+    }],
+  });
+};
+
+const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 3 }, fakeSerpApiFetch);
+const serpApiCandidates = await serpApiProvider.searchDeals(['SFO', 'SJC', 'OAK']);
+assert.equal(serpApiRequestCount, 3);
+assert.equal(serpApiCandidates.length, 3);
+assert.equal(serpApiCandidates[0].origin, 'SFO');
+assert.equal(serpApiCandidates[1].origin, 'SJC');
+assert.equal(serpApiCandidates[2].origin, 'OAK');
+assert.equal(serpApiCandidates[2].price, 190);
+
+console.log('Scanner tests passed: provider normalization, three-airport discovery, and deal scoring are working.');

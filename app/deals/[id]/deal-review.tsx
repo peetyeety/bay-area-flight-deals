@@ -180,7 +180,7 @@ export default function DealReview({ deal }: Props) {
     <main className="review-page">
       <header className="review-topbar">
         <Link href="/deals" className="review-brand"><span>LF</span><strong>LOCAL FLIGHT DEALS</strong></Link>
-        <div className="review-top-actions"><span className="mock-pill">{deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
+        <div className="review-top-actions"><span className="mock-pill">{deal.provider?.includes('serpapi') ? 'GOOGLE TRAVEL DATA' : deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
       </header>
 
       <div className="review-wrap">

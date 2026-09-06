@@ -10,14 +10,55 @@ function dealId(provider: FlightDataProvider, candidate: { databaseId?: string; 
   return candidate.databaseId ?? `${provider.name}-${candidate.providerReference}`.toLowerCase();
 }
 
+type HistoricalObservation = {
+  origin: AirportCode;
+  destination_airport: string;
+  price: number;
+};
+
+function routeKey(origin: AirportCode, destination: string) {
+  return `${origin}-${destination}`;
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
+}
+
+async function historicalBaselines(provider: FlightDataProvider) {
+  if (provider.name === 'mock') return new Map<string, number>();
+  const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1_000).toISOString();
+  const { data, error } = await createSupabaseAdmin()
+    .from('fare_observations')
+    .select('origin,destination_airport,price')
+    .eq('provider', provider.name)
+    .gte('observed_at', since)
+    .limit(5_000);
+  if (error) throw new Error(`Unable to load fare history: ${error.message}`);
+
+  const grouped = new Map<string, number[]>();
+  for (const row of (data ?? []) as HistoricalObservation[]) {
+    const key = routeKey(row.origin, row.destination_airport);
+    grouped.set(key, [...(grouped.get(key) ?? []), row.price]);
+  }
+  return new Map(
+    [...grouped.entries()]
+      .filter(([, prices]) => prices.length >= 3)
+      .map(([key, prices]) => [key, median(prices)]),
+  );
+}
+
 export async function runFareScan(provider: FlightDataProvider = configuredFlightProvider()) {
   const candidates = await provider.searchDeals(origins);
   const observedAt = new Date().toISOString();
   const supabase = createSupabaseAdmin();
+  const baselines = await historicalBaselines(provider);
   const scoredCandidates = candidates.map((candidate) => {
+    const typicalPrice = candidate.typicalPrice ?? baselines.get(routeKey(candidate.origin, candidate.destinationAirport));
     const calculated = scoreDeal({
       currentPrice: candidate.price,
-      typicalPrice: candidate.typicalPrice,
+      typicalPrice,
       nonstop: candidate.nonstop,
     });
     return {
