@@ -7,6 +7,9 @@ function adminEmail() {
 
 export async function getAdminUser() {
   const expectedEmail = adminEmail();
+  if (process.env.NODE_ENV === 'development' && process.env.LOCAL_AUTH_BYPASS === 'true') {
+    return { id: 'local-development', email: expectedEmail ?? 'local@development.invalid' };
+  }
   if (!expectedEmail) return null;
 
   const supabase = await createSupabaseServerClient();

@@ -39,5 +39,6 @@ The dashboard uses `SupabaseAirfareProvider`; the fixture data remains separate 
 npm run dev    # local development server
 npm run build  # production build
 npm run lint   # static checks
+npm run scan   # run the local mock fare-ingestion pipeline
 npm run seed   # load development deals into Supabase
 ```

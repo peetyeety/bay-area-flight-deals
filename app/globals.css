@@ -45,7 +45,9 @@ h1 { margin: 10px 0 7px; font: 750 clamp(29px, 3.3vw, 41px)/1.12 var(--font-disp
 .page-intro p { margin: 0; color: var(--muted); font-size: 14px; }
 .scan-button { border: 0; border-radius: 9px; padding: 12px 17px; background: var(--coral); color: white; box-shadow: 0 6px 14px #e8594130; font-size: 12px; font-weight: 700; cursor: pointer; }
 .scan-button:hover { background: var(--coral-dark); }
+.scan-button:disabled { opacity: .65; cursor: wait; }
 .scan-button span { display: inline-block; margin-right: 6px; font-size: 16px; }
+.scan-result { margin: 16px 0 -14px; padding: 11px 13px; border: 1px solid #cfe9dc; border-radius: 9px; background: #edf8f2; color: #287c5b; font-size: 11px; font-weight: 700; }
 .stats-row { margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); background: white; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #2c374008; overflow: hidden; }
 .stats-row > div { min-height: 91px; padding: 20px 22px; display: grid; grid-template-columns: 34px 1fr; column-gap: 12px; border-right: 1px solid var(--line); }
 .stats-row > div:last-child { border: 0; }

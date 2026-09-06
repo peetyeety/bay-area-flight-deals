@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import type { FlightDeal } from '../../lib/deals';
 import SignOutButton from '../sign-out-button';
@@ -16,8 +17,29 @@ const nav = [
 ];
 
 export default function DealsDashboard({ deals }: Props) {
+  const router = useRouter();
   const [sortMode, setSortMode] = useState<SortMode>('score');
   const [origin, setOrigin] = useState('All airports');
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
+  const [lastRun, setLastRun] = useState('8 min ago');
+
+  async function runScan() {
+    setScanning(true);
+    setScanMessage('');
+    try {
+      const response = await fetch('/api/scans', { method: 'POST' });
+      const result = await response.json() as { candidatesFound?: number; observationsSaved?: number; error?: string };
+      if (!response.ok) throw new Error(result.error ?? 'The test scan failed.');
+      setLastRun('just now');
+      setScanMessage(`Test scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
+      router.refresh();
+    } catch (error) {
+      setScanMessage(error instanceof Error ? error.message : 'The test scan failed.');
+    } finally {
+      setScanning(false);
+    }
+  }
 
   const visibleDeals = useMemo(() => {
     const filtered = origin === 'All airports' ? deals : deals.filter((deal) => deal.origin === origin);
@@ -45,7 +67,7 @@ export default function DealsDashboard({ deals }: Props) {
         </nav>
         <div className="scan-card">
           <span className="pulse" />
-          <div><strong>Scanner active</strong><small>Last run 8 min ago</small></div>
+          <div><strong>Test scanner ready</strong><small>Last run {lastRun}</small></div>
         </div>
         <div className="sidebar-user">
           <span>PL</span><div><strong>Peter</strong><small>Administrator</small></div><b>•••</b>
@@ -65,8 +87,10 @@ export default function DealsDashboard({ deals }: Props) {
               <h1>Flight deals worth checking.</h1>
               <p>Freshly scored fares from SFO, SJC, and OAK—ready for a quick human review.</p>
             </div>
-            <button className="scan-button"><span>↻</span> Run fare scan</button>
+            <button className="scan-button" onClick={runScan} disabled={scanning}><span>↻</span> {scanning ? 'Scanning…' : 'Run test scan'}</button>
           </section>
+
+          {scanMessage && <p className="scan-result" role="status">{scanMessage}</p>}
 
           <section className="stats-row" aria-label="Deal summary">
             <div><span className="stat-icon coral">↘</span><p>New candidates<strong>12</strong></p><small>+3 today</small></div>
