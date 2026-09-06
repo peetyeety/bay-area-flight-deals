@@ -25,6 +25,13 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState('');
   const [lastRun, setLastRun] = useState('8 min ago');
+  const verifiedCount = deals.filter((deal) => ['verified', 'post_generated', 'published'].includes(deal.status ?? '')).length;
+  const medianSavings = (() => {
+    const savings = deals.map((deal) => deal.percentBelowTypical).sort((a, b) => a - b);
+    if (!savings.length) return 0;
+    const middle = Math.floor(savings.length / 2);
+    return savings.length % 2 ? savings[middle] : Math.round((savings[middle - 1] + savings[middle]) / 2);
+  })();
 
   async function runScan() {
     setScanning(true);
@@ -95,9 +102,9 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
           {scanMessage && <p className="scan-result" role="status">{scanMessage}</p>}
 
           <section className="stats-row" aria-label="Deal summary">
-            <div><span className="stat-icon coral">↘</span><p>New candidates<strong>12</strong></p><small>+3 today</small></div>
-            <div><span className="stat-icon green">✓</span><p>Verified this week<strong>4</strong></p><small>33% hit rate</small></div>
-            <div><span className="stat-icon violet">◇</span><p>Median savings<strong>42%</strong></p><small>vs. typical fare</small></div>
+            <div><span className="stat-icon coral">↘</span><p>Current candidates<strong>{deals.length}</strong></p><small>active provider</small></div>
+            <div><span className="stat-icon green">✓</span><p>Verified<strong>{verifiedCount}</strong></p><small>current queue</small></div>
+            <div><span className="stat-icon violet">◇</span><p>Median savings<strong>{medianSavings}%</strong></p><small>improves as history builds</small></div>
             <div><span className="stat-icon blue">⌁</span><p>Airports scanned<strong>3</strong></p><small>SFO · SJC · OAK</small></div>
           </section>
 

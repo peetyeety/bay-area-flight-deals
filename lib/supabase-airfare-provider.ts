@@ -114,9 +114,16 @@ export class SupabaseAirfareProvider implements AirfareProvider {
   readonly name = 'supabase';
 
   async listDeals() {
+    const selectedProvider = process.env.FLIGHT_PROVIDER?.toLowerCase();
+    const databaseProvider = selectedProvider === 'serpapi'
+      ? 'serpapi-google-travel'
+      : selectedProvider === 'amadeus'
+        ? `amadeus-${process.env.AMADEUS_ENV === 'production' ? 'production' : 'test'}`
+        : 'mock';
     const { data, error } = await createSupabaseAdmin()
       .from('deals')
       .select(dealSelect)
+      .eq('provider', databaseProvider)
       .not('status', 'in', '(rejected,expired)')
       .order('score', { ascending: false });
 
