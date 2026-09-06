@@ -23,12 +23,14 @@ export type InstagramPostDraft = {
 
 export type FlightDeal = {
   id: string;
+  provider?: string;
   origin: AirportCode;
   destinationAirport: string;
   destinationCity: string;
   destinationCountry: string;
   region: 'Asia' | 'Europe' | 'Americas' | 'Oceania';
   price: number;
+  currency?: string;
   typicalPrice: number;
   percentBelowTypical: number;
   score: number;
@@ -40,6 +42,7 @@ export type FlightDeal = {
   comparison: AirportComparison[];
   status?: DealStatus;
   latestPost?: InstagramPostDraft;
+  bookingUrl?: string;
 };
 
 export interface AirfareProvider {

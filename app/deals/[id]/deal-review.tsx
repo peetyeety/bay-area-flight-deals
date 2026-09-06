@@ -180,7 +180,7 @@ export default function DealReview({ deal }: Props) {
     <main className="review-page">
       <header className="review-topbar">
         <Link href="/deals" className="review-brand"><span>LF</span><strong>LOCAL FLIGHT DEALS</strong></Link>
-        <div className="review-top-actions"><span className="mock-pill">MOCK DATA</span><SignOutButton /><span className="avatar">PL</span></div>
+        <div className="review-top-actions"><span className="mock-pill">{deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
       </header>
 
       <div className="review-wrap">
@@ -236,7 +236,8 @@ export default function DealReview({ deal }: Props) {
             </section>
             <section className="card-panel source-panel">
               <span className="section-kicker">SOURCE DETAILS</span>
-              <dl><div><dt>Provider</dt><dd>Mock provider</dd></div><div><dt>Last seen</dt><dd>{deal.seenAgo}</dd></div><div><dt>Currency</dt><dd>USD</dd></div></dl>
+              <dl><div><dt>Provider</dt><dd>{deal.provider ?? 'Unknown'}</dd></div><div><dt>Last seen</dt><dd>{deal.seenAgo}</dd></div><div><dt>Currency</dt><dd>{deal.currency ?? 'USD'}</dd></div></dl>
+              {deal.bookingUrl && <a href={deal.bookingUrl} target="_blank" rel="noreferrer">Open fare search ↗</a>}
             </section>
           </aside>
         </div>

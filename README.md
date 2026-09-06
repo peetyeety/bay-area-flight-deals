@@ -22,7 +22,16 @@ Open [http://localhost:3000/deals](http://localhost:3000/deals).
 5. Click **Generate Instagram Post**.
 6. Edit or copy the caption, and download the generated 1080×1350 PNG.
 
-All fares are realistic mock data for development only. The app reads them through the `AirfareProvider` interface in `lib/deals.ts`, so a production provider can replace `MockAirfareProvider` later.
+The project starts with realistic mock data. Set `FLIGHT_PROVIDER=amadeus` after adding Amadeus credentials to switch the same scanner button and CLI command to live airfare discovery.
+
+## Live airfare scanner
+
+1. Create a free app in the [Amadeus for Developers dashboard](https://developers.amadeus.com/).
+2. Copy its **API Key** and **API Secret** into `.env.local` as `AMADEUS_API_KEY` and `AMADEUS_API_SECRET`.
+3. Set `FLIGHT_PROVIDER=amadeus` and leave `AMADEUS_ENV=test` while developing.
+4. Restart `npm run dev`, then click **Run live scan**, or run `npm run scan`.
+
+The scanner discovers cheap destinations from SFO, SJC, and OAK, checks current offers when available, retrieves median price metrics for scoring, and saves candidates plus observations to Supabase. Amadeus test mode contains a limited subset of data; production mode is needed for broad real-time coverage. Every candidate remains `needs_review` until a human verifies it.
 
 ## Supabase setup
 
@@ -39,6 +48,6 @@ The dashboard uses `SupabaseAirfareProvider`; the fixture data remains separate 
 npm run dev    # local development server
 npm run build  # production build
 npm run lint   # static checks
-npm run scan   # run the local mock fare-ingestion pipeline
+npm run scan   # run the configured mock or Amadeus fare-ingestion pipeline
 npm run seed   # load development deals into Supabase
 ```

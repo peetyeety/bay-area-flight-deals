@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import type { FlightDeal } from '../../lib/deals';
 import SignOutButton from '../sign-out-button';
 
-type Props = { deals: FlightDeal[] };
+type Props = { deals: FlightDeal[]; scanProvider: 'mock' | 'amadeus' };
 type SortMode = 'score' | 'price' | 'savings';
 
 const nav = [
@@ -16,7 +16,7 @@ const nav = [
   ['↻', 'Scan history', ''],
 ];
 
-export default function DealsDashboard({ deals }: Props) {
+export default function DealsDashboard({ deals, scanProvider }: Props) {
   const router = useRouter();
   const [sortMode, setSortMode] = useState<SortMode>('score');
   const [origin, setOrigin] = useState('All airports');
@@ -32,7 +32,7 @@ export default function DealsDashboard({ deals }: Props) {
       const result = await response.json() as { candidatesFound?: number; observationsSaved?: number; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The test scan failed.');
       setLastRun('just now');
-      setScanMessage(`Test scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
+      setScanMessage(`${scanProvider === 'amadeus' ? 'Live' : 'Test'} scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
       router.refresh();
     } catch (error) {
       setScanMessage(error instanceof Error ? error.message : 'The test scan failed.');
@@ -67,7 +67,7 @@ export default function DealsDashboard({ deals }: Props) {
         </nav>
         <div className="scan-card">
           <span className="pulse" />
-          <div><strong>Test scanner ready</strong><small>Last run {lastRun}</small></div>
+          <div><strong>{scanProvider === 'amadeus' ? 'Live scanner ready' : 'Test scanner ready'}</strong><small>Last run {lastRun}</small></div>
         </div>
         <div className="sidebar-user">
           <span>PL</span><div><strong>Peter</strong><small>Administrator</small></div><b>•••</b>
@@ -83,11 +83,11 @@ export default function DealsDashboard({ deals }: Props) {
         <div className="content-wrap">
           <section className="page-intro">
             <div>
-              <div className="eyebrow"><span className="live-dot" />LIVE DATABASE · MOCK FARES</div>
+              <div className="eyebrow"><span className="live-dot" />LIVE DATABASE · {scanProvider === 'amadeus' ? 'AMADEUS FARES' : 'MOCK FARES'}</div>
               <h1>Flight deals worth checking.</h1>
               <p>Freshly scored fares from SFO, SJC, and OAK—ready for a quick human review.</p>
             </div>
-            <button className="scan-button" onClick={runScan} disabled={scanning}><span>↻</span> {scanning ? 'Scanning…' : 'Run test scan'}</button>
+            <button className="scan-button" onClick={runScan} disabled={scanning}><span>↻</span> {scanning ? 'Scanning…' : scanProvider === 'amadeus' ? 'Run live scan' : 'Run test scan'}</button>
           </section>
 
           {scanMessage && <p className="scan-result" role="status">{scanMessage}</p>}
@@ -122,7 +122,7 @@ export default function DealsDashboard({ deals }: Props) {
               ))}
             </div>
           </section>
-          <footer><span>Mock data · For development only</span><span>Prices last refreshed 8 minutes ago</span></footer>
+          <footer><span>{scanProvider === 'amadeus' ? 'Amadeus data · Verify before posting' : 'Mock data · For development only'}</span><span>Prices last refreshed {lastRun}</span></footer>
         </div>
       </section>
     </main>

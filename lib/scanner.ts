@@ -1,63 +1,91 @@
 import { createSupabaseAdmin } from './supabase/admin.ts';
-import { mockFlightDataProvider, type FlightDataProvider } from './providers/mock-provider.ts';
+import { configuredFlightProvider } from './providers/configured-provider.ts';
+import type { FlightDataProvider } from './providers/types.ts';
 import type { AirportCode } from './deals.ts';
+import { scoreDeal } from './scoring.ts';
 
 const origins: AirportCode[] = ['SFO', 'SJC', 'OAK'];
 
-function databaseDate(displayDate: string) {
-  const month = displayDate.split(' ')[0];
-  const year = ['Jan', 'Feb', 'Mar'].includes(month) ? 2027 : 2026;
-  return new Date(`${displayDate}, ${year} 12:00:00 UTC`).toISOString().slice(0, 10);
+function dealId(provider: FlightDataProvider, candidate: { databaseId?: string; providerReference: string }) {
+  return candidate.databaseId ?? `${provider.name}-${candidate.providerReference}`.toLowerCase();
 }
 
-export async function runFareScan(provider: FlightDataProvider = mockFlightDataProvider) {
+export async function runFareScan(provider: FlightDataProvider = configuredFlightProvider()) {
   const candidates = await provider.searchDeals(origins);
   const observedAt = new Date().toISOString();
   const supabase = createSupabaseAdmin();
+  const scoredCandidates = candidates.map((candidate) => {
+    const calculated = scoreDeal({
+      currentPrice: candidate.price,
+      typicalPrice: candidate.typicalPrice,
+      nonstop: candidate.nonstop,
+    });
+    return {
+      candidate,
+      scoring: {
+        ...calculated,
+        percentBelowTypical: candidate.percentBelowTypical ?? calculated.percentBelowTypical,
+        score: candidate.score ?? calculated.score,
+      },
+    };
+  });
 
-  const dealRows = candidates.map((deal) => ({
-    id: deal.id,
+  const dealRows = scoredCandidates.map(({ candidate, scoring }) => ({
+    id: dealId(provider, candidate),
     provider: provider.name,
-    provider_reference: deal.id,
-    origin: deal.origin,
-    destination_airport: deal.destinationAirport,
-    destination_city: deal.destinationCity,
-    destination_country: deal.destinationCountry,
-    region: deal.region,
-    price: deal.price,
-    typical_price: deal.typicalPrice,
-    percent_below_typical: deal.percentBelowTypical,
-    score: deal.score,
-    airline: deal.airline,
-    nonstop: deal.nonstop,
-    outbound_date: databaseDate(deal.outboundDate),
-    return_date: databaseDate(deal.returnDate),
+    provider_reference: candidate.providerReference,
+    origin: candidate.origin,
+    destination_airport: candidate.destinationAirport,
+    destination_city: candidate.destinationCity,
+    destination_country: candidate.destinationCountry,
+    region: candidate.region,
+    price: candidate.price,
+    currency: candidate.currency,
+    typical_price: scoring.typicalPrice,
+    percent_below_typical: scoring.percentBelowTypical,
+    score: scoring.score,
+    airline: candidate.airline ?? 'Carrier not confirmed',
+    nonstop: candidate.nonstop ?? false,
+    outbound_date: candidate.outboundDate,
+    return_date: candidate.returnDate,
+    booking_url: candidate.bookingUrl ?? null,
     last_seen_at: observedAt,
   }));
 
   const { error: dealError } = await supabase.from('deals').upsert(dealRows, { onConflict: 'id' });
   if (dealError) throw new Error(`Unable to save scanned deals: ${dealError.message}`);
 
-  const observationRows = candidates.map((deal) => ({
-    deal_id: deal.id,
+  const observationRows = scoredCandidates.map(({ candidate }) => ({
+    deal_id: dealId(provider, candidate),
     provider: provider.name,
-    origin: deal.origin,
-    destination_airport: deal.destinationAirport,
-    price: deal.price,
-    currency: 'USD',
-    airline: deal.airline,
-    nonstop: deal.nonstop,
-    outbound_date: databaseDate(deal.outboundDate),
-    return_date: databaseDate(deal.returnDate),
+    origin: candidate.origin,
+    destination_airport: candidate.destinationAirport,
+    price: candidate.price,
+    currency: candidate.currency,
+    airline: candidate.airline ?? null,
+    nonstop: candidate.nonstop ?? false,
+    outbound_date: candidate.outboundDate,
+    return_date: candidate.returnDate,
+    booking_url: candidate.bookingUrl ?? null,
     observed_at: observedAt,
-    raw_payload: deal,
+    raw_payload: candidate.rawPayload ?? candidate,
   }));
   const { error: observationError } = await supabase.from('fare_observations').insert(observationRows);
   if (observationError) throw new Error(`Unable to save fare observations: ${observationError.message}`);
 
-  const comparisonRows = candidates.flatMap((deal) =>
-    deal.comparison.map((comparison) => ({
-      deal_id: deal.id,
+  const comparisonRows = scoredCandidates.flatMap(({ candidate }) =>
+    (candidate.comparison ?? origins.map((airport) => ({
+      airport,
+      price: airport === candidate.origin
+        ? candidate.price
+        : candidates.find((other) =>
+          other.origin === airport
+          && other.destinationAirport === candidate.destinationAirport
+          && other.outboundDate === candidate.outboundDate
+          && other.returnDate === candidate.returnDate,
+        )?.price ?? null,
+    }))).map((comparison) => ({
+      deal_id: dealId(provider, candidate),
       airport: comparison.airport,
       price: comparison.price,
       checked_at: observedAt,
@@ -70,7 +98,7 @@ export async function runFareScan(provider: FlightDataProvider = mockFlightDataP
 
   return {
     provider: provider.name,
-    candidatesFound: candidates.length,
+    candidatesFound: scoredCandidates.length,
     observationsSaved: observationRows.length,
     completedAt: observedAt,
   };

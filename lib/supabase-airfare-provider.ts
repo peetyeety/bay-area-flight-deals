@@ -3,12 +3,14 @@ import { createSupabaseAdmin } from './supabase/admin';
 
 type DealRow = {
   id: string;
+  provider: string;
   origin: AirportCode;
   destination_airport: string;
   destination_city: string;
   destination_country: string;
   region: FlightDeal['region'] | null;
   price: number;
+  currency: string;
   typical_price: number | null;
   percent_below_typical: number | null;
   score: number;
@@ -18,6 +20,7 @@ type DealRow = {
   return_date: string | null;
   last_seen_at: string;
   status: DealStatus;
+  booking_url: string | null;
   airport_comparisons: Array<{ airport: AirportCode; price: number | null }>;
   instagram_posts: Array<{
     id: string;
@@ -52,12 +55,14 @@ function mapDeal(row: DealRow): FlightDeal {
 
   return {
     id: row.id,
+    provider: row.provider,
     origin: row.origin,
     destinationAirport: row.destination_airport,
     destinationCity: row.destination_city,
     destinationCountry: row.destination_country,
     region: row.region ?? 'Americas',
     price: row.price,
+    currency: row.currency,
     typicalPrice: row.typical_price ?? row.price,
     percentBelowTypical: Number(row.percent_below_typical ?? 0),
     score: Number(row.score),
@@ -77,17 +82,20 @@ function mapDeal(row: DealRow): FlightDeal {
           status: latestPost.status,
         }
       : undefined,
+    bookingUrl: row.booking_url ?? undefined,
   };
 }
 
 const dealSelect = `
   id,
+  provider,
   origin,
   destination_airport,
   destination_city,
   destination_country,
   region,
   price,
+  currency,
   typical_price,
   percent_below_typical,
   score,
@@ -97,6 +105,7 @@ const dealSelect = `
   return_date,
   last_seen_at,
   status,
+  booking_url,
   airport_comparisons ( airport, price ),
   instagram_posts ( id, caption, image_path, status, created_at )
 `;
