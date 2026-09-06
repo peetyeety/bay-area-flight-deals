@@ -1,9 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const loginSchema = z.object({ email: z.string().trim().email() });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const parsed = loginSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: 'Enter a valid email address.' }, { status: 400 });
 
@@ -17,9 +18,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'That email is not authorized for this dashboard.' }, { status: 403 });
   }
 
-  const origin = new URL(request.url).origin;
-  const supabase = createClient(url, publishableKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  const origin = request.nextUrl.origin;
+  const response = NextResponse.json({ sent: true });
+  const supabase = createServerClient(url, publishableKey, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
   });
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
@@ -27,5 +34,5 @@ export async function POST(request: Request) {
   });
 
   if (error) return Response.json({ error: error.message }, { status: 400 });
-  return Response.json({ sent: true });
+  return response;
 }
