@@ -1,8 +1,11 @@
 import { createSupabaseAdmin } from '../../../../../lib/supabase/admin';
+import { requireAdminApi } from '../../../../../lib/auth';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(_request: Request, { params }: RouteContext) {
+  const unauthorized = await requireAdminApi();
+  if (unauthorized) return unauthorized;
   const { id } = await params;
   const supabase = createSupabaseAdmin();
   const { data: deal, error: readError } = await supabase

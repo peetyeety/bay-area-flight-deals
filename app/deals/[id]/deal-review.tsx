@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { FlightDeal } from '../../../lib/deals';
+import SignOutButton from '../../sign-out-button';
 
 type Props = { deal: FlightDeal };
 
@@ -179,7 +180,7 @@ export default function DealReview({ deal }: Props) {
     <main className="review-page">
       <header className="review-topbar">
         <Link href="/deals" className="review-brand"><span>LF</span><strong>LOCAL FLIGHT DEALS</strong></Link>
-        <div className="review-top-actions"><span className="mock-pill">MOCK DATA</span><span className="avatar">PL</span></div>
+        <div className="review-top-actions"><span className="mock-pill">MOCK DATA</span><SignOutButton /><span className="avatar">PL</span></div>
       </header>
 
       <div className="review-wrap">

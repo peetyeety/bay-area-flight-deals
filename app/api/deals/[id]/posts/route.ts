@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createSupabaseAdmin } from '../../../../../lib/supabase/admin';
+import { requireAdminApi } from '../../../../../lib/auth';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -9,6 +10,8 @@ const postSchema = z.object({
 });
 
 export async function POST(request: Request, { params }: RouteContext) {
+  const unauthorized = await requireAdminApi();
+  if (unauthorized) return unauthorized;
   const result = postSchema.safeParse(await request.json());
   if (!result.success) {
     return Response.json({ error: 'The generated image or caption is invalid.' }, { status: 400 });

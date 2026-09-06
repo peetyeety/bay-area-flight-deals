@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { createSupabaseAdmin } from '../../../../lib/supabase/admin';
+import { requireAdminApi } from '../../../../lib/auth';
 
 type RouteContext = { params: Promise<{ id: string }> };
 const captionSchema = z.object({ caption: z.string().trim().min(1).max(2200) });
 
 export async function PATCH(request: Request, { params }: RouteContext) {
+  const unauthorized = await requireAdminApi();
+  if (unauthorized) return unauthorized;
   const result = captionSchema.safeParse(await request.json());
   if (!result.success) return Response.json({ error: 'Caption must contain 1–2,200 characters.' }, { status: 400 });
 

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { FlightDeal } from '../../lib/deals';
+import SignOutButton from '../sign-out-button';
 
 type Props = { deals: FlightDeal[] };
 type SortMode = 'score' | 'price' | 'savings';
@@ -54,7 +55,7 @@ export default function DealsDashboard({ deals }: Props) {
       <section className="workspace">
         <header className="topbar">
           <div className="breadcrumbs"><span>Bay Area</span><b>/</b><strong>Deal queue</strong></div>
-          <div className="top-actions"><button aria-label="Notifications">♢<i /></button><span className="avatar">PL</span></div>
+          <div className="top-actions"><button aria-label="Notifications">♢<i /></button><SignOutButton /><span className="avatar">PL</span></div>
         </header>
 
         <div className="content-wrap">

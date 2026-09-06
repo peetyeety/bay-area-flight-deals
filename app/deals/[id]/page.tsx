@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { airfareProvider } from '../../../lib/supabase-airfare-provider';
+import { requireAdminPage } from '../../../lib/auth';
 import DealReview from './deal-review';
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DealPage({ params }: PageProps) {
   const { id } = await params;
+  await requireAdminPage(`/deals/${id}`);
   const deal = await airfareProvider.getDeal(id);
   if (!deal) notFound();
   return <DealReview deal={deal} />;
