@@ -23,19 +23,27 @@ type PhotoApiResponse = {
 };
 
 const PHOTO_CREDIT_PREFIX = '📷 Photo: ';
+const BIO_LINK_LINE = 'See the link in @bayflightdeals’ bio for all current Bay Area flight deals and booking links.';
 
-function buildCaption(deal: FlightDeal) {
+function hashtagLine(deal: FlightDeal) {
   const cityTag = deal.destinationCity.replace(/\s/g, '');
-  return `BAY AREA → ${deal.destinationCity.toUpperCase()} ✈️\n\n$${deal.price} round trip from ${deal.origin} — ${deal.nonstop ? 'nonstop' : 'one stop'} on ${deal.airline}. That’s ${deal.percentBelowTypical}% below the typical fare we track.\n\n📅 ${deal.outboundDate}–${deal.returnDate}\n💸 Typical fare: $${deal.typicalPrice}\n\nFares move fast. Always confirm the final price and dates before booking.\n\nSee the link in @bayflightdeals’ bio for all current Bay Area flight deals and booking links.\n\n#BayAreaFlights #BayAreaTravel #FlightDeals #AirfareDeals #CheapFlights #TravelDeals #${cityTag} #${cityTag}Travel #CaliforniaTravel #${deal.origin}Flights`;
+  return `#BayAreaFlights #BayAreaTravel #FlightDeals #AirfareDeals #CheapFlights #TravelDeals #${cityTag} #${cityTag}Travel #CaliforniaTravel #${deal.origin}Flights`;
 }
 
-function captionWithPhotoCredit(caption: string, photo: DestinationPhoto) {
-  const withoutOldCredit = caption
+function refreshCaption(deal: FlightDeal, caption: string) {
+  const cleanedCaption = caption
     .split('\n')
     .filter((line) => !line.startsWith(PHOTO_CREDIT_PREFIX))
+    .filter((line) => !line.trim().startsWith('#'))
+    .filter((line) => !line.includes('link in @bayflightdeals') && !line.includes('bio for all current Bay Area flight deals'))
     .join('\n')
     .trim();
-  return `${withoutOldCredit}\n\n${PHOTO_CREDIT_PREFIX}${photo.photographer} via Pexels — ${photo.photoUrl}`;
+  return `${cleanedCaption}\n\n${BIO_LINK_LINE}\n\n${hashtagLine(deal)}`;
+}
+
+function buildCaption(deal: FlightDeal) {
+  const dealDetails = `BAY AREA → ${deal.destinationCity.toUpperCase()} ✈️\n\n$${deal.price} round trip from ${deal.origin} — ${deal.nonstop ? 'nonstop' : 'one stop'} on ${deal.airline}. That’s ${deal.percentBelowTypical}% below the typical fare we track.\n\n📅 ${deal.outboundDate}–${deal.returnDate}\n💸 Typical fare: $${deal.typicalPrice}\n\nFares move fast. Always confirm the final price and dates before booking.`;
+  return refreshCaption(deal, dealDetails);
 }
 
 function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
@@ -114,7 +122,7 @@ function graphicDate(label: string, isoDate?: string) {
   }).format(new Date(`${isoDate}T00:00:00Z`)).toUpperCase();
 }
 
-function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?: HTMLImageElement) {
+function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?: DestinationPhoto) {
   const context = canvas.getContext('2d');
   if (!context) return;
   const width = 1080;
@@ -189,7 +197,7 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
     context.clip();
     drawImageCover(
       context,
-      destinationPhoto,
+      destinationPhoto.image,
       photoCenterX - photoRadius,
       photoCenterY - photoRadius,
       photoRadius * 2,
@@ -209,6 +217,20 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.font = '700 22px Arial';
   context.textAlign = 'left';
   context.fillText('@BAYFLIGHTDEALS', 68, 1307);
+
+  if (destinationPhoto) {
+    const photoCredit = `PHOTO: ${destinationPhoto.photographer.toUpperCase()} VIA PEXELS`;
+    context.font = '700 14px Arial';
+    const creditWidth = Math.min(context.measureText(photoCredit).width, 340);
+    context.fillStyle = 'rgba(20, 27, 31, 0.72)';
+    context.beginPath();
+    context.roundRect(1012 - creditWidth - 22, 1277, creditWidth + 34, 42, 7);
+    context.fill();
+    context.fillStyle = '#ffffff';
+    context.textAlign = 'right';
+    context.fillText(photoCredit, 1000, 1304, 340);
+    context.textAlign = 'left';
+  }
 }
 
 export default function DealReview({ deal }: Props) {
@@ -226,7 +248,7 @@ export default function DealReview({ deal }: Props) {
   const [instagramConnection, setInstagramConnection] = useState<'checking' | 'connected' | 'not-connected'>('checking');
   const [instagramUsername, setInstagramUsername] = useState('bayflightdeals');
   const [postId, setPostId] = useState(hasUsableLatestPost ? deal.latestPost?.id ?? '' : '');
-  const [caption, setCaption] = useState(() => deal.latestPost?.caption ?? buildCaption(deal));
+  const [caption, setCaption] = useState(() => deal.latestPost?.caption ? refreshCaption(deal, deal.latestPost.caption) : buildCaption(deal));
   const [notice, setNotice] = useState('');
   const [photoCredit, setPhotoCredit] = useState<Omit<DestinationPhoto, 'image'> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -261,7 +283,7 @@ export default function DealReview({ deal }: Props) {
     loadDestinationPhoto().then((photo) => {
       if (!active || !photo) return;
       setPhotoCredit(photo);
-      drawPost(canvas, deal, photo.image);
+      drawPost(canvas, deal, photo);
     });
     return () => { active = false; };
   }, [generated, deal, loadDestinationPhoto]);
@@ -304,12 +326,12 @@ export default function DealReview({ deal }: Props) {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error('The image preview could not be created.');
       const photo = await loadDestinationPhoto();
-      const nextCaption = photo ? captionWithPhotoCredit(caption, photo) : caption;
+      const nextCaption = refreshCaption(deal, caption);
       if (photo) {
         setPhotoCredit(photo);
-        setCaption(nextCaption);
       }
-      drawPost(canvas, deal, photo?.image);
+      setCaption(nextCaption);
+      drawPost(canvas, deal, photo ?? undefined);
 
       const response = await fetch(`/api/deals/${deal.id}/posts`, {
         method: 'POST',
