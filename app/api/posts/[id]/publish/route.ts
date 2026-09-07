@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { requireAdminApi } from '../../../../../lib/auth';
-import { publishInstagramImage } from '../../../../../lib/instagram';
+import { instagramErrorDetails, publishInstagramImage } from '../../../../../lib/instagram';
 import { createSupabaseAdmin } from '../../../../../lib/supabase/admin';
 
 type RouteContext = { params: Promise<{ id: string }> };
 const publishSchema = z.object({ caption: z.string().trim().min(1).max(2200) });
+
+export const maxDuration = 60;
 
 export async function POST(request: Request, { params }: RouteContext) {
   const unauthorized = await requireAdminApi();
@@ -79,6 +81,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     await supabase.from('publishing_attempts').insert({
       instagram_post_id: id,
       succeeded: false,
+      provider_response: instagramErrorDetails(error),
       error_message: message,
     });
     return Response.json({ error: message }, { status: 502 });

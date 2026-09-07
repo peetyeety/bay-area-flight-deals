@@ -46,9 +46,9 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.fillStyle = '#202a31';
   context.font = '800 118px Arial';
   context.fillText(deal.destinationCity.toUpperCase(), 65, 398);
-  context.font = '700 28px Arial';
+  context.font = '800 52px Arial';
   context.fillStyle = '#f25f45';
-  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 72, 454);
+  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 466);
 
   context.fillStyle = '#ffffff';
   context.beginPath();
@@ -73,7 +73,7 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.fillText(`${deal.nonstop ? 'NONSTOP' : '1 STOP'}  ·  ${deal.airline.toUpperCase()}`, 112, 995);
 
   context.fillStyle = '#202a31';
-  context.font = '800 30px Arial';
+  context.font = '800 46px Arial';
   context.fillText(`${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`, 68, 1148);
   context.font = '500 22px Arial';
   context.fillStyle = '#717a7d';
