@@ -56,6 +56,53 @@ function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageEleme
   context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
 }
 
+function fittedFont(context: CanvasRenderingContext2D, text: string, preferredSize: number, minimumSize: number, maxWidth: number) {
+  let size = preferredSize;
+  context.font = `800 ${size}px Arial`;
+  while (size > minimumSize && context.measureText(text).width > maxWidth) {
+    size -= 2;
+    context.font = `800 ${size}px Arial`;
+  }
+}
+
+function drawLocationPin(context: CanvasRenderingContext2D, x: number, y: number) {
+  context.save();
+  context.translate(x, y);
+  context.fillStyle = '#f25f45';
+  context.beginPath();
+  context.moveTo(34, 76);
+  context.bezierCurveTo(27, 65, 5, 42, 5, 27);
+  context.bezierCurveTo(5, 10, 18, 0, 34, 0);
+  context.bezierCurveTo(50, 0, 63, 10, 63, 27);
+  context.bezierCurveTo(63, 42, 41, 65, 34, 76);
+  context.fill();
+  context.fillStyle = '#f6f0e7';
+  context.beginPath();
+  context.arc(34, 27, 10, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+}
+
+function drawCalendar(context: CanvasRenderingContext2D, x: number, y: number) {
+  context.save();
+  context.strokeStyle = '#202a31';
+  context.lineWidth = 5;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.beginPath();
+  context.roundRect(x, y + 7, 52, 49, 7);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(x, y + 23);
+  context.lineTo(x + 52, y + 23);
+  context.moveTo(x + 14, y);
+  context.lineTo(x + 14, y + 15);
+  context.moveTo(x + 38, y);
+  context.lineTo(x + 38, y + 15);
+  context.stroke();
+  context.restore();
+}
+
 function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?: HTMLImageElement) {
   const context = canvas.getContext('2d');
   if (!context) return;
@@ -79,9 +126,11 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.font = '800 36px Arial';
   context.fillText('FLIGHT DEAL ALERT', 72, 104);
 
+  const destinationName = deal.destinationCity.toUpperCase();
+  drawLocationPin(context, 67, 316);
   context.fillStyle = '#202a31';
-  context.font = '800 118px Arial';
-  context.fillText(deal.destinationCity.toUpperCase(), 65, 398);
+  fittedFont(context, destinationName, 118, 62, 865);
+  context.fillText(destinationName, 153, 398);
   context.font = '800 62px Arial';
   context.fillStyle = '#f25f45';
   context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 475);
@@ -109,15 +158,17 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.fillText(`${deal.nonstop ? 'NONSTOP' : '1 STOP'}  ·  ${deal.airline.toUpperCase()}`, 112, 995);
 
   context.fillStyle = '#202a31';
-  context.font = '800 56px Arial';
-  context.fillText(`${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`, 68, 1148);
+  const dateRange = `${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`;
+  drawCalendar(context, 68, 1091);
+  fittedFont(context, dateRange, 56, 40, 545);
+  context.fillText(dateRange, 140, 1148);
   context.font = '500 22px Arial';
   context.fillStyle = '#717a7d';
   context.fillText('Prices can change anytime. Verify before booking.', 68, 1192);
 
-  const photoCenterX = 910;
-  const photoCenterY = 1110;
-  const photoRadius = 182;
+  const photoCenterX = 900;
+  const photoCenterY = 1100;
+  const photoRadius = 205;
   context.fillStyle = '#f25f45';
   context.beginPath();
   context.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
