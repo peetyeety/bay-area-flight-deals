@@ -153,7 +153,7 @@ export function createSerpApiProviderFromEnvironment() {
   }
   return new SerpApiFlightDataProvider({
     apiKey,
-    maxDeals: Math.max(1, Math.min(30, Number(process.env.SERPAPI_MAX_DEALS ?? 12))),
+    maxDeals: Math.max(1, Math.min(100, Number(process.env.SERPAPI_MAX_DEALS ?? 50))),
     maxPrice: process.env.SERPAPI_MAX_PRICE ? Number(process.env.SERPAPI_MAX_PRICE) : undefined,
     minimumDiscountPercent: Math.max(0, Math.min(100, Number(process.env.DEAL_MIN_DISCOUNT_PERCENT ?? 30))),
   });

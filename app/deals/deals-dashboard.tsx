@@ -10,10 +10,10 @@ type Props = { deals: FlightDeal[]; scanProvider: 'mock' | 'amadeus' | 'serpapi'
 type SortMode = 'score' | 'price' | 'savings';
 
 const nav = [
-  ['✦', 'Deals', '12'],
-  ['◎', 'Verified', '4'],
-  ['▣', 'Content', ''],
-  ['↻', 'Scan history', ''],
+  ['✦', 'Deals'],
+  ['◎', 'Verified'],
+  ['▣', 'Content'],
+  ['↻', 'Scan history'],
 ];
 
 export default function DealsDashboard({ deals, scanProvider }: Props) {
@@ -68,11 +68,14 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
         </Link>
         <nav className="side-nav" aria-label="Main navigation">
           <p>WORKSPACE</p>
-          {nav.map(([icon, label, count], index) => (
-            <a key={label} className={index === 0 ? 'active' : ''} href={index === 0 ? '/deals' : '#'}>
-              <span>{icon}</span>{label}{count && <b>{count}</b>}
-            </a>
-          ))}
+          {nav.map(([icon, label], index) => {
+            const count = index === 0 ? deals.length : index === 1 ? verifiedCount : 0;
+            return (
+              <a key={label} className={index === 0 ? 'active' : ''} href={index === 0 ? '/deals' : '#'}>
+                <span>{icon}</span>{label}{count > 0 && <b>{count}</b>}
+              </a>
+            );
+          })}
         </nav>
         <div className="scan-card">
           <span className="pulse" />
