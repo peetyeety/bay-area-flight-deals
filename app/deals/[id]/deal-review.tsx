@@ -37,18 +37,15 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.setLineDash([]);
 
   context.fillStyle = '#202a31';
-  context.font = '700 25px Arial';
-  context.fillText('BAY AREA FLIGHT DEALS', 72, 88);
-  context.font = '700 17px Arial';
-  context.fillStyle = '#7b817f';
-  context.fillText('BAY AREA FARE DROP', 72, 123);
+  context.font = '800 36px Arial';
+  context.fillText('FLIGHT DEAL ALERT', 72, 104);
 
   context.fillStyle = '#202a31';
   context.font = '800 118px Arial';
   context.fillText(deal.destinationCity.toUpperCase(), 65, 398);
-  context.font = '800 52px Arial';
+  context.font = '800 62px Arial';
   context.fillStyle = '#f25f45';
-  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 466);
+  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 475);
 
   context.fillStyle = '#ffffff';
   context.beginPath();
@@ -73,7 +70,7 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.fillText(`${deal.nonstop ? 'NONSTOP' : '1 STOP'}  ·  ${deal.airline.toUpperCase()}`, 112, 995);
 
   context.fillStyle = '#202a31';
-  context.font = '800 46px Arial';
+  context.font = '800 56px Arial';
   context.fillText(`${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`, 68, 1148);
   context.font = '500 22px Arial';
   context.fillStyle = '#717a7d';
