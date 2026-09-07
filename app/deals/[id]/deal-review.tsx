@@ -25,7 +25,8 @@ type PhotoApiResponse = {
 const PHOTO_CREDIT_PREFIX = '📷 Photo: ';
 
 function buildCaption(deal: FlightDeal) {
-  return `BAY AREA → ${deal.destinationCity.toUpperCase()} ✈️\n\n$${deal.price} round trip from ${deal.origin} — ${deal.nonstop ? 'nonstop' : 'one stop'} on ${deal.airline}. That’s ${deal.percentBelowTypical}% below the typical fare we track.\n\n📅 ${deal.outboundDate}–${deal.returnDate}\n💸 Typical fare: $${deal.typicalPrice}\n\nFares move fast. Always confirm the final price and dates before booking.\n\n#BayAreaFlights #FlightDeals #${deal.destinationCity.replace(/\s/g, '')} #CheapFlights`;
+  const cityTag = deal.destinationCity.replace(/\s/g, '');
+  return `BAY AREA → ${deal.destinationCity.toUpperCase()} ✈️\n\n$${deal.price} round trip from ${deal.origin} — ${deal.nonstop ? 'nonstop' : 'one stop'} on ${deal.airline}. That’s ${deal.percentBelowTypical}% below the typical fare we track.\n\n📅 ${deal.outboundDate}–${deal.returnDate}\n💸 Typical fare: $${deal.typicalPrice}\n\nFares move fast. Always confirm the final price and dates before booking.\n\nSee the link in @bayflightdeals’ bio for all current Bay Area flight deals and booking links.\n\n#BayAreaFlights #BayAreaTravel #FlightDeals #AirfareDeals #CheapFlights #TravelDeals #${cityTag} #${cityTag}Travel #CaliforniaTravel #${deal.origin}Flights`;
 }
 
 function captionWithPhotoCredit(caption: string, photo: DestinationPhoto) {
