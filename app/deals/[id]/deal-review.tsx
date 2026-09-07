@@ -160,15 +160,18 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.fillStyle = '#202a31';
   const dateRange = `${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`;
   drawCalendar(context, 68, 1091);
-  fittedFont(context, dateRange, 56, 40, 545);
+  fittedFont(context, dateRange, 56, 40, 490);
   context.fillText(dateRange, 140, 1148);
   context.font = '500 22px Arial';
   context.fillStyle = '#717a7d';
   context.fillText('Prices can change anytime. Verify before booking.', 68, 1192);
 
-  const photoCenterX = 900;
-  const photoCenterY = 1100;
-  const photoRadius = 205;
+  context.fillStyle = '#202a31';
+  context.fillRect(0, 1240, width, 110);
+
+  const photoCenterX = 930;
+  const photoCenterY = 1115;
+  const photoRadius = 290;
   context.fillStyle = '#f25f45';
   context.beginPath();
   context.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
@@ -196,8 +199,6 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
     context.stroke();
   }
 
-  context.fillStyle = '#202a31';
-  context.fillRect(0, 1240, width, 110);
   context.fillStyle = '#ffffff';
   context.font = '700 22px Arial';
   context.textAlign = 'left';
