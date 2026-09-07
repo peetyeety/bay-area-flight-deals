@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { AmadeusFlightDataProvider } from '../lib/providers/amadeus-provider.ts';
 import { SerpApiFlightDataProvider } from '../lib/providers/serpapi-provider.ts';
 import { scoreDeal } from '../lib/scoring.ts';
+import { scannedDealId } from '../lib/scanner.ts';
 
 function json(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
@@ -126,5 +127,7 @@ assert.equal(serpApiCandidates[0].origin, 'SFO');
 assert.equal(serpApiCandidates[1].origin, 'SJC');
 assert.equal(serpApiCandidates[2].origin, 'OAK');
 assert.equal(serpApiCandidates[2].price, 190);
+assert.match(serpApiCandidates[0].providerReference, /\/m\//);
+assert.doesNotMatch(scannedDealId(serpApiProvider, serpApiCandidates[0]), /\//);
 
 console.log('Scanner tests passed: provider normalization, three-airport discovery, and deal scoring are working.');

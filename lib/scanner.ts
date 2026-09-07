@@ -6,8 +6,13 @@ import { scoreDeal } from './scoring.ts';
 
 const origins: AirportCode[] = ['SFO', 'SJC', 'OAK'];
 
-function dealId(provider: FlightDataProvider, candidate: { databaseId?: string; providerReference: string }) {
-  return candidate.databaseId ?? `${provider.name}-${candidate.providerReference}`.toLowerCase();
+export function scannedDealId(provider: Pick<FlightDataProvider, 'name'>, candidate: { databaseId?: string; providerReference: string }) {
+  if (candidate.databaseId) return candidate.databaseId;
+  return `${provider.name}-${candidate.providerReference}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 200);
 }
 
 type HistoricalObservation = {
@@ -72,7 +77,7 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
   });
 
   const dealRows = scoredCandidates.map(({ candidate, scoring }) => ({
-    id: dealId(provider, candidate),
+    id: scannedDealId(provider, candidate),
     provider: provider.name,
     provider_reference: candidate.providerReference,
     origin: candidate.origin,
@@ -97,7 +102,7 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
   if (dealError) throw new Error(`Unable to save scanned deals: ${dealError.message}`);
 
   const observationRows = scoredCandidates.map(({ candidate }) => ({
-    deal_id: dealId(provider, candidate),
+    deal_id: scannedDealId(provider, candidate),
     provider: provider.name,
     origin: candidate.origin,
     destination_airport: candidate.destinationAirport,
@@ -126,7 +131,7 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
           && other.returnDate === candidate.returnDate,
         )?.price ?? null,
     }))).map((comparison) => ({
-      deal_id: dealId(provider, candidate),
+      deal_id: scannedDealId(provider, candidate),
       airport: comparison.airport,
       price: comparison.price,
       checked_at: observedAt,
