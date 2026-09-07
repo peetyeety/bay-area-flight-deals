@@ -211,17 +211,20 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
 }
 
 export default function DealReview({ deal }: Props) {
+  const latestPostWasManuallyRemoved = deal.latestPost?.status === 'failed' && Boolean(deal.latestPost.publishedAt);
+  const hasUsableLatestPost = Boolean(deal.latestPost) && !latestPostWasManuallyRemoved;
   const [verified, setVerified] = useState(['verified', 'post_generated', 'published'].includes(deal.status ?? ''));
   const [verifying, setVerifying] = useState(false);
-  const [generated, setGenerated] = useState(Boolean(deal.latestPost));
+  const [generated, setGenerated] = useState(hasUsableLatestPost);
   const [generating, setGenerating] = useState(false);
   const [savingCaption, setSavingCaption] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [removingFromInstagram, setRemovingFromInstagram] = useState(false);
   const [published, setPublished] = useState(deal.latestPost?.status === 'published');
   const [permalink, setPermalink] = useState(deal.latestPost?.permalink ?? '');
   const [instagramConnection, setInstagramConnection] = useState<'checking' | 'connected' | 'not-connected'>('checking');
   const [instagramUsername, setInstagramUsername] = useState('bayflightdeals');
-  const [postId, setPostId] = useState(deal.latestPost?.id ?? '');
+  const [postId, setPostId] = useState(hasUsableLatestPost ? deal.latestPost?.id ?? '' : '');
   const [caption, setCaption] = useState(() => deal.latestPost?.caption ?? buildCaption(deal));
   const [notice, setNotice] = useState('');
   const [photoCredit, setPhotoCredit] = useState<Omit<DestinationPhoto, 'image'> | null>(null);
@@ -382,6 +385,30 @@ export default function DealReview({ deal }: Props) {
     }
   };
 
+  const markDeletedFromInstagram = async () => {
+    if (!postId || !published) return;
+    const confirmed = window.confirm('Use this only after deleting the post in Instagram. This resets the deal so you can generate and publish a replacement.');
+    if (!confirmed) return;
+
+    setRemovingFromInstagram(true);
+    try {
+      const response = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? 'The dashboard could not be updated.');
+
+      setPublished(false);
+      setPermalink('');
+      setPostId('');
+      setGenerated(false);
+      setVerified(true);
+      setNotice('Marked as deleted. Generate the latest graphic when you are ready.');
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'The dashboard could not be updated.');
+    } finally {
+      setRemovingFromInstagram(false);
+    }
+  };
+
   return (
     <main className="review-page">
       <header className="review-topbar">
@@ -466,7 +493,11 @@ export default function DealReview({ deal }: Props) {
                   <button onClick={saveCaption} className="save-caption-action" disabled={!postId || savingCaption}>{savingCaption ? 'Saving…' : '✓ Save changes'}</button>
                   <button onClick={copyCaption} className="copy-action">▣ Copy caption</button>
                   {published && permalink ? (
-                    <a className="publish-action published" href={permalink} target="_blank" rel="noreferrer">✓ View published post on Instagram ↗</a>
+                    <>
+                      <a className="publish-action published" href={permalink} target="_blank" rel="noreferrer">✓ View published post on Instagram ↗</a>
+                      <button type="button" className="mark-deleted-action" onClick={markDeletedFromInstagram} disabled={removingFromInstagram}>{removingFromInstagram ? 'Updating dashboard…' : 'I deleted this from Instagram'}</button>
+                      <small className="delete-post-hint">Use this after deleting the Instagram post so you can create a replacement.</small>
+                    </>
                   ) : (
                     <button onClick={publish} className="publish-action" disabled={!postId || publishing || instagramConnection !== 'connected'}>{publishing ? 'Publishing to Instagram…' : instagramConnection === 'connected' ? `Publish now to @${instagramUsername}` : 'Connect Instagram to publish'}</button>
                   )}
