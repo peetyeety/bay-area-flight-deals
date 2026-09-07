@@ -1,17 +1,62 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FlightDeal } from '../../../lib/deals';
 import SignOutButton from '../../sign-out-button';
 
 type Props = { deal: FlightDeal };
 
+type DestinationPhoto = {
+  image: HTMLImageElement;
+  photographer: string;
+  photographerUrl: string;
+  photoUrl: string;
+};
+
+type PhotoApiResponse = {
+  available?: boolean;
+  imageDataUrl?: string;
+  photographer?: string;
+  photographerUrl?: string;
+  photoUrl?: string;
+};
+
+const PHOTO_CREDIT_PREFIX = '📷 Photo: ';
+
 function buildCaption(deal: FlightDeal) {
   return `BAY AREA → ${deal.destinationCity.toUpperCase()} ✈️\n\n$${deal.price} round trip from ${deal.origin} — ${deal.nonstop ? 'nonstop' : 'one stop'} on ${deal.airline}. That’s ${deal.percentBelowTypical}% below the typical fare we track.\n\n📅 ${deal.outboundDate}–${deal.returnDate}\n💸 Typical fare: $${deal.typicalPrice}\n\nFares move fast. Always confirm the final price and dates before booking.\n\n#BayAreaFlights #FlightDeals #${deal.destinationCity.replace(/\s/g, '')} #CheapFlights`;
 }
 
-function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
+function captionWithPhotoCredit(caption: string, photo: DestinationPhoto) {
+  const withoutOldCredit = caption
+    .split('\n')
+    .filter((line) => !line.startsWith(PHOTO_CREDIT_PREFIX))
+    .join('\n')
+    .trim();
+  return `${withoutOldCredit}\n\n${PHOTO_CREDIT_PREFIX}${photo.photographer} via Pexels — ${photo.photoUrl}`;
+}
+
+function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const frameRatio = width / height;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (imageRatio > frameRatio) {
+    sourceWidth = image.naturalHeight * frameRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / frameRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?: HTMLImageElement) {
   const context = canvas.getContext('2d');
   if (!context) return;
   const width = 1080;
@@ -25,6 +70,26 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.beginPath();
   context.arc(940, 150, 310, 0, Math.PI * 2);
   context.fill();
+  if (destinationPhoto) {
+    context.save();
+    context.beginPath();
+    context.arc(940, 150, 310, 0, Math.PI * 2);
+    context.clip();
+    drawImageCover(context, destinationPhoto, 630, -160, 620, 620);
+    context.fillStyle = 'rgba(32, 42, 49, 0.14)';
+    context.fillRect(630, -160, 620, 620);
+    const fade = context.createLinearGradient(625, 0, 830, 0);
+    fade.addColorStop(0, 'rgba(246, 240, 231, 0.96)');
+    fade.addColorStop(1, 'rgba(246, 240, 231, 0)');
+    context.fillStyle = fade;
+    context.fillRect(625, -160, 210, 620);
+    context.restore();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.arc(940, 150, 306, 0, Math.PI * 2);
+    context.stroke();
+  }
   context.fillStyle = '#202a31';
   context.fillRect(0, 1240, width, 110);
   context.strokeStyle = '#202a31';
@@ -97,11 +162,43 @@ export default function DealReview({ deal }: Props) {
   const [postId, setPostId] = useState(deal.latestPost?.id ?? '');
   const [caption, setCaption] = useState(() => deal.latestPost?.caption ?? buildCaption(deal));
   const [notice, setNotice] = useState('');
+  const [photoCredit, setPhotoCredit] = useState<Omit<DestinationPhoto, 'image'> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const photoPromiseRef = useRef<Promise<DestinationPhoto | null> | null>(null);
+
+  const loadDestinationPhoto = useCallback(() => {
+    if (photoPromiseRef.current) return photoPromiseRef.current;
+    photoPromiseRef.current = fetch(`/api/deals/${deal.id}/photo`)
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const result = await response.json() as PhotoApiResponse;
+        if (!result.available || !result.imageDataUrl || !result.photographer || !result.photographerUrl || !result.photoUrl) return null;
+        const image = new Image();
+        image.src = result.imageDataUrl;
+        await image.decode();
+        return {
+          image,
+          photographer: result.photographer,
+          photographerUrl: result.photographerUrl,
+          photoUrl: result.photoUrl,
+        };
+      })
+      .catch(() => null);
+    return photoPromiseRef.current;
+  }, [deal.id]);
 
   useEffect(() => {
-    if (generated && canvasRef.current) drawPost(canvasRef.current, deal);
-  }, [generated, deal]);
+    if (!generated || !canvasRef.current) return;
+    let active = true;
+    const canvas = canvasRef.current;
+    drawPost(canvas, deal);
+    loadDestinationPhoto().then((photo) => {
+      if (!active || !photo) return;
+      setPhotoCredit(photo);
+      drawPost(canvas, deal, photo.image);
+    });
+    return () => { active = false; };
+  }, [generated, deal, loadDestinationPhoto]);
 
   useEffect(() => {
     let active = true;
@@ -140,12 +237,18 @@ export default function DealReview({ deal }: Props) {
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       const canvas = canvasRef.current;
       if (!canvas) throw new Error('The image preview could not be created.');
-      drawPost(canvas, deal);
+      const photo = await loadDestinationPhoto();
+      const nextCaption = photo ? captionWithPhotoCredit(caption, photo) : caption;
+      if (photo) {
+        setPhotoCredit(photo);
+        setCaption(nextCaption);
+      }
+      drawPost(canvas, deal, photo?.image);
 
       const response = await fetch(`/api/deals/${deal.id}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caption, imageDataUrl: canvas.toDataURL('image/jpeg', 0.92) }),
+        body: JSON.stringify({ caption: nextCaption, imageDataUrl: canvas.toDataURL('image/jpeg', 0.92) }),
       });
       const result = await response.json() as { postId?: string; error?: string };
       if (!response.ok || !result.postId) throw new Error(result.error ?? 'The Instagram draft could not be saved.');
@@ -290,6 +393,7 @@ export default function DealReview({ deal }: Props) {
             <div className="studio-grid">
               <div className="canvas-panel">
                 <canvas ref={canvasRef} aria-label={`Instagram graphic for ${deal.origin} to ${deal.destinationCity}`} />
+                {photoCredit && <p className="photo-credit">Photo by <a href={photoCredit.photographerUrl} target="_blank" rel="noreferrer">{photoCredit.photographer}</a> on <a href={photoCredit.photoUrl} target="_blank" rel="noreferrer">Pexels</a></p>}
                 <button onClick={download} className="download-action">↓ Download image</button>
               </div>
               <div className="caption-panel">
