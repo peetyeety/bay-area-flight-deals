@@ -103,6 +103,16 @@ function drawCalendar(context: CanvasRenderingContext2D, x: number, y: number) {
   context.restore();
 }
 
+function graphicDate(label: string, isoDate?: string) {
+  if (!isoDate) return label.toUpperCase();
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDate}T00:00:00Z`)).toUpperCase();
+}
+
 function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?: HTMLImageElement) {
   const context = canvas.getContext('2d');
   if (!context) return;
@@ -113,58 +123,53 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
 
   context.fillStyle = '#f6f0e7';
   context.fillRect(0, 0, width, height);
-  context.strokeStyle = '#202a31';
-  context.lineWidth = 3;
-  context.setLineDash([10, 14]);
-  context.beginPath();
-  context.moveTo(730, 80);
-  context.bezierCurveTo(550, 220, 860, 300, 660, 430);
-  context.stroke();
-  context.setLineDash([]);
 
   context.fillStyle = '#202a31';
   context.font = '800 36px Arial';
   context.fillText('FLIGHT DEAL ALERT', 72, 104);
 
   const destinationName = deal.destinationCity.toUpperCase();
-  drawLocationPin(context, 67, 316);
+  drawLocationPin(context, 67, 270);
   context.fillStyle = '#202a31';
   fittedFont(context, destinationName, 118, 62, 865);
-  context.fillText(destinationName, 153, 398);
+  context.fillText(destinationName, 153, 352);
   context.font = '800 62px Arial';
   context.fillStyle = '#f25f45';
-  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 475);
+  context.fillText(`${deal.origin}  →  ${deal.destinationAirport}`, 68, 429);
 
   context.fillStyle = '#ffffff';
   context.beginPath();
-  context.roundRect(65, 515, 950, 520, 34);
+  context.roundRect(65, 469, 950, 520, 34);
   context.fill();
   context.fillStyle = '#202a31';
   context.font = '700 32px Arial';
-  context.fillText('ROUND TRIP FROM', 112, 595);
+  context.fillText('ROUND TRIP FROM', 112, 549);
   context.font = '800 236px Arial';
-  context.fillText(`$${deal.price}`, 95, 825);
+  context.fillText(`$${deal.price}`, 95, 779);
   context.fillStyle = '#2b9a71';
   context.font = '800 39px Arial';
-  context.fillText(`${deal.percentBelowTypical}% BELOW TYPICAL`, 112, 903);
+  context.fillText(`${deal.percentBelowTypical}% BELOW TYPICAL`, 112, 857);
   context.strokeStyle = '#e7e2da';
   context.lineWidth = 2;
   context.beginPath();
-  context.moveTo(112, 945);
-  context.lineTo(968, 945);
+  context.moveTo(112, 899);
+  context.lineTo(968, 899);
   context.stroke();
   context.fillStyle = '#5f686c';
   context.font = '700 25px Arial';
-  context.fillText(`${deal.nonstop ? 'NONSTOP' : '1 STOP'}  ·  ${deal.airline.toUpperCase()}`, 112, 995);
+  context.fillText(`${deal.nonstop ? 'NONSTOP' : '1 STOP'}  ·  ${deal.airline.toUpperCase()}`, 112, 949);
 
   context.fillStyle = '#202a31';
-  const dateRange = `${deal.outboundDate.toUpperCase()} — ${deal.returnDate.toUpperCase()}`;
-  drawCalendar(context, 68, 1091);
-  fittedFont(context, dateRange, 56, 40, 490);
-  context.fillText(dateRange, 140, 1148);
+  const outboundDate = graphicDate(deal.outboundDate, deal.outboundDateIso);
+  const returnDate = `→ ${graphicDate(deal.returnDate, deal.returnDateIso)}`;
+  drawCalendar(context, 68, 1009);
+  fittedFont(context, outboundDate, 48, 38, 480);
+  context.fillText(outboundDate, 140, 1058);
+  fittedFont(context, returnDate, 48, 38, 480);
+  context.fillText(returnDate, 140, 1116);
   context.font = '500 22px Arial';
   context.fillStyle = '#717a7d';
-  context.fillText('Prices can change anytime. Verify before booking.', 68, 1192);
+  context.fillText('Prices can change anytime. Verify before booking.', 68, 1182);
 
   context.fillStyle = '#202a31';
   context.fillRect(0, 1240, width, 110);

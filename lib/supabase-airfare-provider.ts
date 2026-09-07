@@ -72,6 +72,8 @@ function mapDeal(row: DealRow): FlightDeal {
     nonstop: row.nonstop,
     outboundDate: formatDate(row.outbound_date),
     returnDate: formatDate(row.return_date),
+    outboundDateIso: row.outbound_date ?? undefined,
+    returnDateIso: row.return_date ?? undefined,
     seenAgo: formatSeenAgo(row.last_seen_at),
     comparison: [...row.airport_comparisons]
       .sort((a, b) => ['SFO', 'SJC', 'OAK'].indexOf(a.airport) - ['SFO', 'SJC', 'OAK'].indexOf(b.airport)),

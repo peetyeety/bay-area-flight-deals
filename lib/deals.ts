@@ -40,6 +40,8 @@ export type FlightDeal = {
   nonstop: boolean;
   outboundDate: string;
   returnDate: string;
+  outboundDateIso?: string;
+  returnDateIso?: string;
   seenAgo: string;
   comparison: AirportComparison[];
   status?: DealStatus;
