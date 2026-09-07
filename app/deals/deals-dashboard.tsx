@@ -18,9 +18,9 @@ const nav = [
 
 export default function DealsDashboard({ deals, scanProvider }: Props) {
   const liveScanner = scanProvider !== 'mock';
-  const providerLabel = scanProvider === 'serpapi' ? 'GOOGLE TRAVEL FARES' : scanProvider === 'amadeus' ? 'AMADEUS FARES' : 'MOCK FARES';
+  const providerLabel = scanProvider === 'serpapi' ? 'GOOGLE FLIGHTS DEALS' : scanProvider === 'amadeus' ? 'AMADEUS FARES' : 'MOCK FARES';
   const router = useRouter();
-  const [sortMode, setSortMode] = useState<SortMode>('score');
+  const [sortMode, setSortMode] = useState<SortMode>('savings');
   const [origin, setOrigin] = useState('All airports');
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState('');

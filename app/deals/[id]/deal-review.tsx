@@ -180,7 +180,7 @@ export default function DealReview({ deal }: Props) {
     <main className="review-page">
       <header className="review-topbar">
         <Link href="/deals" className="review-brand"><span>LF</span><strong>LOCAL FLIGHT DEALS</strong></Link>
-        <div className="review-top-actions"><span className="mock-pill">{deal.provider?.includes('serpapi') ? 'GOOGLE TRAVEL DATA' : deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
+        <div className="review-top-actions"><span className="mock-pill">{deal.provider?.includes('serpapi') ? 'GOOGLE FLIGHTS DEAL' : deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
       </header>
 
       <div className="review-wrap">
@@ -226,6 +226,7 @@ export default function DealReview({ deal }: Props) {
               <span className="section-kicker">HUMAN REVIEW</span>
               <h2>{verified ? 'Deal verified' : 'Ready to verify?'}</h2>
               <p>{verified ? 'The fare is approved for social content.' : 'Confirm the fare, dates, and routing match the source before publishing.'}</p>
+              {deal.bookingUrl && <a className="booking-action" href={deal.bookingUrl} target="_blank" rel="noreferrer">View on Google Flights ↗</a>}
               {!verified ? (
                 <button className="primary-action" onClick={verify} disabled={verifying}>{verifying ? 'Saving…' : '✓ Verify Deal'}</button>
               ) : (

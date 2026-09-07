@@ -31,7 +31,7 @@ The project starts with realistic mock data. Set `FLIGHT_PROVIDER=serpapi` after
 3. Set `FLIGHT_PROVIDER=serpapi`.
 4. Restart `npm run dev`, then click **Run live scan**, or run `npm run scan`.
 
-The scanner uses three Google Travel Explore requests—one each for SFO, SJC, and OAK—and saves up to 12 real flexible-date candidates plus raw observations to Supabase. It builds historical route medians after three observations for scoring. Every candidate still requires human verification before publishing.
+The scanner uses three Google Flights Deals requests—one each for SFO, SJC, and OAK. It accepts only fares at least `DEAL_MIN_DISCOUNT_PERCENT` below Google's reported average price (30% by default), ranks the queue by largest discount, and saves up to 12 candidates plus raw observations to Supabase. Each candidate includes a direct Google Flights link and still requires human verification before publishing.
 
 Amadeus support remains in the code as an optional provider, but Amadeus's new Self-Service onboarding has been decommissioned and is not the recommended setup for this MVP.
 

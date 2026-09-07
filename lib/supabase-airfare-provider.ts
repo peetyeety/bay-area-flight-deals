@@ -116,7 +116,7 @@ export class SupabaseAirfareProvider implements AirfareProvider {
   async listDeals() {
     const selectedProvider = process.env.FLIGHT_PROVIDER?.toLowerCase();
     const databaseProvider = selectedProvider === 'serpapi'
-      ? 'serpapi-google-travel'
+      ? 'serpapi-google-flights-deals'
       : selectedProvider === 'amadeus'
         ? `amadeus-${process.env.AMADEUS_ENV === 'production' ? 'production' : 'test'}`
         : 'mock';

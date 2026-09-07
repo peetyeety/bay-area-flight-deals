@@ -1,30 +1,33 @@
 import type { AirportCode, FlightDeal } from '../deals.ts';
 import type { FareCandidate, FlightDataProvider } from './types.ts';
 
-type SerpApiDestination = {
+type SerpApiDeal = {
   destination_id?: string;
   name?: string;
   country?: string;
-  destination_airport?: { code?: string; location?: string; name?: string };
-  start_date?: string;
-  end_date?: string;
-  flight_price?: number;
-  number_of_stops?: number;
+  departure_airport_code?: string;
+  arrival_airport_code?: string;
+  outbound_date?: string;
+  return_date?: string;
+  price?: number;
+  average_price?: number;
+  discount_percentage?: number;
+  stops?: number;
   airline?: string;
   airline_code?: string;
-  link?: string;
+  flight_link?: string;
 };
 
 type SerpApiResponse = {
-  destinations?: SerpApiDestination[];
+  deals?: SerpApiDeal[];
   error?: string;
-  search_metadata?: { status?: string };
 };
 
 type SerpApiConfig = {
   apiKey: string;
   maxDeals: number;
   maxPrice?: number;
+  minimumDiscountPercent: number;
 };
 
 const asiaCountries = new Set([
@@ -45,27 +48,34 @@ function regionFor(country: string): FlightDeal['region'] {
   return 'Americas';
 }
 
-function isCompleteDestination(value: SerpApiDestination): value is SerpApiDestination & {
+function isCompleteDeal(value: SerpApiDeal): value is SerpApiDeal & {
   name: string;
   country: string;
-  destination_airport: { code: string };
-  start_date: string;
-  end_date: string;
-  flight_price: number;
+  departure_airport_code: AirportCode;
+  arrival_airport_code: string;
+  outbound_date: string;
+  return_date: string;
+  price: number;
+  average_price: number;
+  discount_percentage: number;
 } {
   return Boolean(
     value.name
     && value.country
-    && value.destination_airport?.code
-    && value.start_date
-    && value.end_date
-    && Number.isFinite(value.flight_price)
-    && Number(value.flight_price) > 0,
+    && value.departure_airport_code
+    && value.arrival_airport_code
+    && value.outbound_date
+    && value.return_date
+    && Number.isFinite(value.price)
+    && Number(value.price) > 0
+    && Number.isFinite(value.average_price)
+    && Number(value.average_price) > 0
+    && Number.isFinite(value.discount_percentage),
   );
 }
 
 export class SerpApiFlightDataProvider implements FlightDataProvider {
-  readonly name = 'serpapi-google-travel';
+  readonly name = 'serpapi-google-flights-deals';
   private readonly config: SerpApiConfig;
   private readonly fetcher: typeof fetch;
 
@@ -76,15 +86,12 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
 
   private async discover(origin: AirportCode) {
     const params: Record<string, string> = {
-      engine: 'google_travel_explore',
+      engine: 'google_flights_deals',
       departure_id: origin,
       currency: 'USD',
       gl: 'us',
       hl: 'en',
       type: '1',
-      month: '0',
-      travel_duration: '2',
-      travel_mode: '1',
       api_key: this.config.apiKey,
     };
     if (this.config.maxPrice) params.max_price = String(this.config.maxPrice);
@@ -95,41 +102,37 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
       throw new Error(payload.error || `SerpApi request failed with HTTP ${response.status}.`);
     }
 
-    return (payload.destinations ?? [])
-      .filter(isCompleteDestination)
-      .map((destination): FareCandidate => ({
-        providerReference: `${origin}-${destination.destination_id ?? destination.destination_airport.code}-${destination.start_date}-${destination.end_date}`,
-        origin,
-        destinationAirport: destination.destination_airport.code,
-        destinationCity: destination.name,
-        destinationCountry: destination.country,
-        region: regionFor(destination.country),
-        price: Math.round(destination.flight_price),
+    return (payload.deals ?? [])
+      .filter(isCompleteDeal)
+      .filter((deal) => deal.discount_percentage >= this.config.minimumDiscountPercent)
+      .map((deal): FareCandidate => ({
+        providerReference: `${deal.departure_airport_code}-${deal.destination_id ?? deal.arrival_airport_code}-${deal.outbound_date}-${deal.return_date}`,
+        origin: deal.departure_airport_code,
+        destinationAirport: deal.arrival_airport_code,
+        destinationCity: deal.name,
+        destinationCountry: deal.country,
+        region: regionFor(deal.country),
+        price: Math.round(deal.price),
         currency: 'USD',
-        airline: destination.airline ?? destination.airline_code ?? 'Carrier not confirmed',
-        nonstop: destination.number_of_stops === 0,
-        outboundDate: destination.start_date,
-        returnDate: destination.end_date,
-        bookingUrl: destination.link,
-        rawPayload: destination,
+        typicalPrice: Math.round(deal.average_price),
+        percentBelowTypical: Math.round(deal.discount_percentage),
+        airline: deal.airline ?? deal.airline_code ?? 'Carrier not confirmed',
+        nonstop: deal.stops === 0,
+        outboundDate: deal.outbound_date,
+        returnDate: deal.return_date,
+        bookingUrl: deal.flight_link,
+        rawPayload: deal,
       }));
   }
 
   async searchDeals(origins: AirportCode[]) {
-    // One Explore request per Bay Area origin: three API credits per complete scan.
-    const results = await Promise.allSettled(origins.map(async (origin) => ({ origin, candidates: await this.discover(origin) })));
-    const successful = results
-      .filter((result): result is PromiseFulfilledResult<{ origin: AirportCode; candidates: FareCandidate[] }> => result.status === 'fulfilled');
-    const allCandidates = successful.flatMap(({ value }) => value.candidates);
-
-    if (!allCandidates.length) {
-      const failures = results
-        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-        .map((result) => result.reason instanceof Error ? result.reason.message : String(result.reason));
-      throw new Error(`SerpApi returned no flight candidates${failures.length ? `: ${failures.join(' | ')}` : '.'}`);
-    }
-
-    const sorted = [...allCandidates].sort((a, b) => a.price - b.price);
+    // One Deals request per origin: three API credits per complete scan.
+    // Fail the whole scan if an origin fails so stale-expiry remains safe.
+    const results = await Promise.all(origins.map(async (origin) => this.discover(origin)));
+    const allCandidates = results.flat();
+    const sorted = [...allCandidates].sort((a, b) =>
+      (b.percentBelowTypical ?? 0) - (a.percentBelowTypical ?? 0) || a.price - b.price,
+    );
     const selected: FareCandidate[] = [];
     for (const origin of origins) {
       const firstForOrigin = sorted.find((candidate) => candidate.origin === origin);
@@ -152,5 +155,6 @@ export function createSerpApiProviderFromEnvironment() {
     apiKey,
     maxDeals: Math.max(1, Math.min(30, Number(process.env.SERPAPI_MAX_DEALS ?? 12))),
     maxPrice: process.env.SERPAPI_MAX_PRICE ? Number(process.env.SERPAPI_MAX_PRICE) : undefined,
+    minimumDiscountPercent: Math.max(0, Math.min(100, Number(process.env.DEAL_MIN_DISCOUNT_PERCENT ?? 30))),
   });
 }

@@ -98,8 +98,10 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
     last_seen_at: observedAt,
   }));
 
-  const { error: dealError } = await supabase.from('deals').upsert(dealRows, { onConflict: 'id' });
-  if (dealError) throw new Error(`Unable to save scanned deals: ${dealError.message}`);
+  if (dealRows.length) {
+    const { error: dealError } = await supabase.from('deals').upsert(dealRows, { onConflict: 'id' });
+    if (dealError) throw new Error(`Unable to save scanned deals: ${dealError.message}`);
+  }
 
   const observationRows = scoredCandidates.map(({ candidate }) => ({
     deal_id: scannedDealId(provider, candidate),
@@ -116,8 +118,10 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
     observed_at: observedAt,
     raw_payload: candidate.rawPayload ?? candidate,
   }));
-  const { error: observationError } = await supabase.from('fare_observations').insert(observationRows);
-  if (observationError) throw new Error(`Unable to save fare observations: ${observationError.message}`);
+  if (observationRows.length) {
+    const { error: observationError } = await supabase.from('fare_observations').insert(observationRows);
+    if (observationError) throw new Error(`Unable to save fare observations: ${observationError.message}`);
+  }
 
   const comparisonRows = scoredCandidates.flatMap(({ candidate }) =>
     (candidate.comparison ?? origins.map((airport) => ({
@@ -137,15 +141,35 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
       checked_at: observedAt,
     })),
   );
-  const { error: comparisonError } = await supabase
-    .from('airport_comparisons')
-    .upsert(comparisonRows, { onConflict: 'deal_id,airport' });
-  if (comparisonError) throw new Error(`Unable to save airport comparisons: ${comparisonError.message}`);
+  if (comparisonRows.length) {
+    const { error: comparisonError } = await supabase
+      .from('airport_comparisons')
+      .upsert(comparisonRows, { onConflict: 'deal_id,airport' });
+    if (comparisonError) throw new Error(`Unable to save airport comparisons: ${comparisonError.message}`);
+  }
+
+  let expiredCandidates = 0;
+  if (provider.name !== 'mock') {
+    const currentIds = new Set(scoredCandidates.map(({ candidate }) => scannedDealId(provider, candidate)));
+    const { data: existing, error: existingError } = await supabase
+      .from('deals')
+      .select('id,status')
+      .eq('provider', provider.name)
+      .in('status', ['candidate', 'needs_review']);
+    if (existingError) throw new Error(`Unable to check stale deals: ${existingError.message}`);
+    const staleIds = (existing ?? []).map((deal) => deal.id as string).filter((id) => !currentIds.has(id));
+    if (staleIds.length) {
+      const { error: expiryError } = await supabase.from('deals').update({ status: 'expired' }).in('id', staleIds);
+      if (expiryError) throw new Error(`Unable to expire stale deals: ${expiryError.message}`);
+      expiredCandidates = staleIds.length;
+    }
+  }
 
   return {
     provider: provider.name,
     candidatesFound: scoredCandidates.length,
     observationsSaved: observationRows.length,
+    expiredCandidates,
     completedAt: observedAt,
   };
 }

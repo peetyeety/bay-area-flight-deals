@@ -100,26 +100,29 @@ const fakeSerpApiFetch: typeof fetch = async (input) => {
   serpApiRequestCount += 1;
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input : input.url);
   const origin = url.searchParams.get('departure_id') ?? 'SFO';
-  assert.equal(url.searchParams.get('engine'), 'google_travel_explore');
+  assert.equal(url.searchParams.get('engine'), 'google_flights_deals');
   assert.equal(url.searchParams.get('api_key'), 'private-key');
   return json({
-    destinations: [{
+    deals: [{
       destination_id: '/m/05qtj',
       name: 'Honolulu',
       country: 'United States',
-      destination_airport: { code: 'HNL' },
-      start_date: '2026-10-10',
-      end_date: '2026-10-17',
-      flight_price: origin === 'OAK' ? 190 : origin === 'SJC' ? 198 : 220,
-      number_of_stops: 0,
+      departure_airport_code: origin,
+      arrival_airport_code: 'HNL',
+      outbound_date: '2026-10-10',
+      return_date: '2026-10-17',
+      price: origin === 'OAK' ? 190 : origin === 'SJC' ? 198 : 220,
+      average_price: 400,
+      discount_percentage: origin === 'OAK' ? 53 : origin === 'SJC' ? 51 : 45,
+      stops: 0,
       airline: 'Southwest',
       airline_code: 'WN',
-      link: 'https://www.google.com/travel/explore',
+      flight_link: 'https://www.google.com/travel/flights',
     }],
   });
 };
 
-const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 3 }, fakeSerpApiFetch);
+const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 3, minimumDiscountPercent: 30 }, fakeSerpApiFetch);
 const serpApiCandidates = await serpApiProvider.searchDeals(['SFO', 'SJC', 'OAK']);
 assert.equal(serpApiRequestCount, 3);
 assert.equal(serpApiCandidates.length, 3);
@@ -127,6 +130,9 @@ assert.equal(serpApiCandidates[0].origin, 'SFO');
 assert.equal(serpApiCandidates[1].origin, 'SJC');
 assert.equal(serpApiCandidates[2].origin, 'OAK');
 assert.equal(serpApiCandidates[2].price, 190);
+assert.equal(serpApiCandidates[2].typicalPrice, 400);
+assert.equal(serpApiCandidates[2].percentBelowTypical, 53);
+assert.equal(serpApiCandidates[2].bookingUrl, 'https://www.google.com/travel/flights');
 assert.match(serpApiCandidates[0].providerReference, /\/m\//);
 assert.doesNotMatch(scannedDealId(serpApiProvider, serpApiCandidates[0]), /\//);
 
