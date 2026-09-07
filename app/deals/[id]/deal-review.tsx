@@ -66,32 +66,6 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
 
   context.fillStyle = '#f6f0e7';
   context.fillRect(0, 0, width, height);
-  context.fillStyle = '#f25f45';
-  context.beginPath();
-  context.arc(940, 150, 310, 0, Math.PI * 2);
-  context.fill();
-  if (destinationPhoto) {
-    context.save();
-    context.beginPath();
-    context.arc(940, 150, 310, 0, Math.PI * 2);
-    context.clip();
-    drawImageCover(context, destinationPhoto, 630, -160, 620, 620);
-    context.fillStyle = 'rgba(32, 42, 49, 0.14)';
-    context.fillRect(630, -160, 620, 620);
-    const fade = context.createLinearGradient(625, 0, 830, 0);
-    fade.addColorStop(0, 'rgba(246, 240, 231, 0.96)');
-    fade.addColorStop(1, 'rgba(246, 240, 231, 0)');
-    context.fillStyle = fade;
-    context.fillRect(625, -160, 210, 620);
-    context.restore();
-    context.strokeStyle = '#ffffff';
-    context.lineWidth = 8;
-    context.beginPath();
-    context.arc(940, 150, 306, 0, Math.PI * 2);
-    context.stroke();
-  }
-  context.fillStyle = '#202a31';
-  context.fillRect(0, 1240, width, 110);
   context.strokeStyle = '#202a31';
   context.lineWidth = 3;
   context.setLineDash([10, 14]);
@@ -141,11 +115,42 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.fillStyle = '#717a7d';
   context.fillText('Prices can change anytime. Verify before booking.', 68, 1192);
 
+  const photoCenterX = 910;
+  const photoCenterY = 1110;
+  const photoRadius = 182;
+  context.fillStyle = '#f25f45';
+  context.beginPath();
+  context.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
+  context.fill();
+  if (destinationPhoto) {
+    context.save();
+    context.beginPath();
+    context.arc(photoCenterX, photoCenterY, photoRadius, 0, Math.PI * 2);
+    context.clip();
+    drawImageCover(
+      context,
+      destinationPhoto,
+      photoCenterX - photoRadius,
+      photoCenterY - photoRadius,
+      photoRadius * 2,
+      photoRadius * 2,
+    );
+    context.fillStyle = 'rgba(32, 42, 49, 0.09)';
+    context.fillRect(photoCenterX - photoRadius, photoCenterY - photoRadius, photoRadius * 2, photoRadius * 2);
+    context.restore();
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.arc(photoCenterX, photoCenterY, photoRadius - 4, 0, Math.PI * 2);
+    context.stroke();
+  }
+
+  context.fillStyle = '#202a31';
+  context.fillRect(0, 1240, width, 110);
   context.fillStyle = '#ffffff';
   context.font = '700 22px Arial';
-  context.textAlign = 'right';
-  context.fillText('@BAYFLIGHTDEALS', 1012, 1307);
   context.textAlign = 'left';
+  context.fillText('@BAYFLIGHTDEALS', 68, 1307);
 }
 
 export default function DealReview({ deal }: Props) {

@@ -21,12 +21,64 @@ type PexelsSearchResponse = {
   photos?: PexelsPhoto[];
 };
 
-function photoSearch(city: string, country: string) {
+const landmarkSearchTerms: Record<string, string> = {
+  ALG: 'Algiers Casbah basilica skyline',
+  ATL: 'Atlanta downtown skyline',
+  BEG: 'Belgrade fortress skyline',
+  BER: 'Berlin Brandenburg Gate',
+  YYC: 'Calgary Tower skyline',
+  CBR: 'Canberra Parliament House',
+  CMN: 'Casablanca Hassan II Mosque',
+  CRW: 'Charleston West Virginia Capitol skyline',
+  YYG: 'Charlottetown Prince Edward Island waterfront',
+  QKL: 'Cologne Cathedral Rhine',
+  DFW: 'Dallas skyline Reunion Tower',
+  EAS: 'San Sebastian La Concha bay',
+  IBZ: 'Ibiza Dalt Vila old town',
+  FLR: 'Florence Duomo skyline',
+  GRX: 'Granada Alhambra palace',
+  GCM: 'Grand Cayman Seven Mile Beach',
+  ISP: 'Long Island New York Montauk lighthouse',
+  TYS: 'Knoxville Sunsphere skyline',
+  LAS: 'Las Vegas Strip skyline',
+  LWS: 'Lewiston Idaho Snake River canyon',
+  LAX: 'Los Angeles Hollywood sign skyline',
+  MSN: 'Madison Wisconsin Capitol skyline',
+  RAK: 'Marrakesh Koutoubia mosque medina',
+  MFR: 'Medford Oregon Rogue Valley mountains',
+  MXP: 'Milan Duomo cathedral',
+  MOZ: 'Moorea French Polynesia lagoon mountains',
+  MLM: 'Morelia Cathedral Mexico',
+  NAS: 'Nassau Bahamas waterfront',
+  ZAQ: 'Nuremberg Castle old town',
+  PMI: 'Palma Mallorca Cathedral waterfront',
+  PSC: 'Tri Cities Washington Columbia River',
+  PWM: 'Portland Maine lighthouse waterfront',
+  PRG: 'Prague Charles Bridge castle',
+  PVU: 'Provo Utah mountains skyline',
+  RAR: 'Rarotonga lagoon mountains',
+  STT: 'Saint Thomas Charlotte Amalie harbor',
+  SAN: 'San Diego skyline Coronado',
+  SNA: 'Orange County California Laguna Beach coast',
+  SCQ: 'Santiago de Compostela Cathedral',
+  SEA: 'Seattle Space Needle skyline',
+  ARN: 'Stockholm Gamla Stan waterfront',
+  TLH: 'Tallahassee Florida Capitol',
+  TNG: 'Tangier Morocco medina coast',
+  TWF: 'Twin Falls Idaho Shoshone Falls',
+  VIE: 'Vienna St Stephen Cathedral skyline',
+  WAW: 'Warsaw Old Town skyline',
+  ZRH: 'Zurich old town lake skyline',
+};
+
+function photoSearch(city: string, country: string, airport: string) {
+  const landmarkQuery = landmarkSearchTerms[airport]
+    ?? `${city} ${country} iconic landmark skyline`;
   const params = new URLSearchParams({
-    query: `${city} ${country} city skyline landmark travel`,
+    query: landmarkQuery,
     orientation: 'landscape',
     size: 'medium',
-    per_page: '10',
+    per_page: '15',
   });
   return `https://api.pexels.com/v1/search?${params}`;
 }
@@ -46,7 +98,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const supabase = createSupabaseAdmin();
   const { data: deal, error: dealError } = await supabase
     .from('deals')
-    .select('destination_city,destination_country')
+    .select('destination_airport,destination_city,destination_country')
     .eq('id', id)
     .maybeSingle();
 
@@ -54,7 +106,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   if (!deal) return Response.json({ error: 'Deal not found.' }, { status: 404 });
 
   try {
-    const searchResponse = await fetch(photoSearch(deal.destination_city, deal.destination_country), {
+    const searchResponse = await fetch(photoSearch(deal.destination_city, deal.destination_country, deal.destination_airport), {
       headers: { Authorization: apiKey },
       next: { revalidate: 86_400 },
     });
