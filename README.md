@@ -20,7 +20,7 @@ Open [http://localhost:3000/deals](http://localhost:3000/deals).
 3. Review the $387 nonstop ZIPAIR fare and Bay Area airport comparison.
 4. Click **Verify Deal**.
 5. Click **Generate Instagram Post**.
-6. Edit or copy the caption, and download the generated 1080×1350 PNG.
+6. Edit or copy the caption, download the generated 1080×1350 JPEG, or publish it through the Instagram API after connecting the account.
 
 The project starts with realistic mock data. Set `FLIGHT_PROVIDER=serpapi` after adding a SerpApi key to switch the same scanner button and CLI command to live airfare discovery.
 
@@ -43,6 +43,23 @@ Amadeus support remains in the code as an optional provider, but Amadeus's new S
 4. Run `npm run setup:storage` once to create public Instagram image storage.
 
 The dashboard uses `SupabaseAirfareProvider`; the fixture data remains separate so a production airfare source can replace it without changing the interface.
+
+## Instagram publishing
+
+The content studio publishes through Meta's Instagram API with Instagram Login. The Instagram account must be a professional Creator or Business account. For this single-owner dashboard, the Meta app can remain in development mode while `bayflightdeals` is an app tester; onboarding accounts that do not belong to the app owner requires Meta App Review.
+
+1. Create a Meta developer app and add the Instagram API product/use case.
+2. Add `bayflightdeals` as the Instagram test account and accept the tester invitation in Instagram.
+3. Grant `instagram_business_basic` and `instagram_business_content_publish`, then generate a long-lived Instagram User access token.
+4. Add these server-side environment variables locally and in Vercel:
+
+```bash
+INSTAGRAM_USERNAME=bayflightdeals
+INSTAGRAM_ACCESS_TOKEN=your_long_lived_instagram_user_access_token
+INSTAGRAM_GRAPH_API_VERSION=v26.0
+```
+
+Never add `NEXT_PUBLIC_` to the access-token variable and never commit or paste the token into chat. Redeploy Vercel after saving it. The content studio will confirm the connected username before enabling **Publish now to @bayflightdeals**. Publishing uses the public Supabase JPEG, stores Meta's publication timestamp/media ID/permalink, and records success or failure in `publishing_attempts`.
 
 ## Commands
 

@@ -38,7 +38,7 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
 
   context.fillStyle = '#202a31';
   context.font = '700 25px Arial';
-  context.fillText('LOCAL FLIGHT DEALS', 72, 88);
+  context.fillText('BAY AREA FLIGHT DEALS', 72, 88);
   context.font = '700 17px Arial';
   context.fillStyle = '#7b817f';
   context.fillText('BAY AREA FARE DROP', 72, 123);
@@ -82,7 +82,7 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal) {
   context.fillStyle = '#ffffff';
   context.font = '700 22px Arial';
   context.textAlign = 'right';
-  context.fillText('@LOCALFLIGHTDEALS', 1012, 1307);
+  context.fillText('@BAYFLIGHTDEALS', 1012, 1307);
   context.textAlign = 'left';
 }
 
@@ -92,6 +92,11 @@ export default function DealReview({ deal }: Props) {
   const [generated, setGenerated] = useState(Boolean(deal.latestPost));
   const [generating, setGenerating] = useState(false);
   const [savingCaption, setSavingCaption] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(deal.latestPost?.status === 'published');
+  const [permalink, setPermalink] = useState(deal.latestPost?.permalink ?? '');
+  const [instagramConnection, setInstagramConnection] = useState<'checking' | 'connected' | 'not-connected'>('checking');
+  const [instagramUsername, setInstagramUsername] = useState('bayflightdeals');
   const [postId, setPostId] = useState(deal.latestPost?.id ?? '');
   const [caption, setCaption] = useState(() => deal.latestPost?.caption ?? buildCaption(deal));
   const [notice, setNotice] = useState('');
@@ -100,6 +105,22 @@ export default function DealReview({ deal }: Props) {
   useEffect(() => {
     if (generated && canvasRef.current) drawPost(canvasRef.current, deal);
   }, [generated, deal]);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/instagram/status')
+      .then((response) => response.json())
+      .then((result: { connected?: boolean; username?: string }) => {
+        if (active) {
+          setInstagramUsername(result.username ?? 'bayflightdeals');
+          setInstagramConnection(result.connected ? 'connected' : 'not-connected');
+        }
+      })
+      .catch(() => {
+        if (active) setInstagramConnection('not-connected');
+      });
+    return () => { active = false; };
+  }, []);
 
   const verify = async () => {
     setVerifying(true);
@@ -133,6 +154,8 @@ export default function DealReview({ deal }: Props) {
       if (!response.ok || !result.postId) throw new Error(result.error ?? 'The Instagram draft could not be saved.');
 
       setPostId(result.postId);
+      setPublished(false);
+      setPermalink('');
       setNotice('Instagram draft and image saved to Supabase.');
       document.getElementById('content-studio')?.scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
@@ -176,10 +199,31 @@ export default function DealReview({ deal }: Props) {
     }
   };
 
+  const publish = async () => {
+    if (!postId || publishing || published) return;
+    setPublishing(true);
+    try {
+      const response = await fetch(`/api/posts/${postId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption }),
+      });
+      const result = await response.json() as { permalink?: string | null; username?: string; error?: string };
+      if (!response.ok) throw new Error(result.error ?? 'The Instagram post could not be published.');
+      setPublished(true);
+      setPermalink(result.permalink ?? '');
+      setNotice(`Published to @${result.username ?? 'bayflightdeals'} successfully.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'The Instagram post could not be published.');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <main className="review-page">
       <header className="review-topbar">
-        <Link href="/deals" className="review-brand"><span>LF</span><strong>LOCAL FLIGHT DEALS</strong></Link>
+        <Link href="/deals" className="review-brand"><span>BA</span><strong>BAY AREA FLIGHT DEALS</strong></Link>
         <div className="review-top-actions"><span className="mock-pill">{deal.provider?.includes('serpapi') ? 'GOOGLE FLIGHTS DEAL' : deal.provider?.startsWith('amadeus') ? 'AMADEUS DATA' : 'MOCK DATA'}</span><SignOutButton /><span className="avatar">PL</span></div>
       </header>
 
@@ -253,10 +297,16 @@ export default function DealReview({ deal }: Props) {
               </div>
               <div className="caption-panel">
                 <label htmlFor="caption">INSTAGRAM CAPTION <span>{caption.length} characters</span></label>
+                <div className={`instagram-status ${instagramConnection}`}><span />{instagramConnection === 'checking' ? 'Checking Instagram connection…' : instagramConnection === 'connected' ? `Connected to @${instagramUsername}` : 'Instagram connection not configured'}</div>
                 <textarea id="caption" value={caption} onChange={(event) => setCaption(event.target.value)} />
                 <div className="caption-actions">
                   <button onClick={saveCaption} className="save-caption-action" disabled={!postId || savingCaption}>{savingCaption ? 'Saving…' : '✓ Save changes'}</button>
                   <button onClick={copyCaption} className="copy-action">▣ Copy caption</button>
+                  {published && permalink ? (
+                    <a className="publish-action published" href={permalink} target="_blank" rel="noreferrer">✓ View published post on Instagram ↗</a>
+                  ) : (
+                    <button onClick={publish} className="publish-action" disabled={!postId || publishing || instagramConnection !== 'connected'}>{publishing ? 'Publishing to Instagram…' : instagramConnection === 'connected' ? `Publish now to @${instagramUsername}` : 'Connect Instagram to publish'}</button>
+                  )}
                 </div>
               </div>
             </div>

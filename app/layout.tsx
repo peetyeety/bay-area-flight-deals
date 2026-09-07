@@ -6,7 +6,7 @@ const bodyFont = DM_Sans({ variable: '--font-body', subsets: ['latin'] });
 const displayFont = Manrope({ variable: '--font-display', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Local Flight Deals — Bay Area fare intelligence',
+  title: 'Bay Area Flight Deals — Bay Area fare intelligence',
   description: 'Review, verify, and publish exceptional airfare deals from SFO, SJC, and OAK.',
 };
 

@@ -28,6 +28,8 @@ type DealRow = {
     image_path: string | null;
     status: 'draft' | 'approved' | 'publishing' | 'published' | 'failed';
     created_at: string;
+    instagram_permalink: string | null;
+    published_at: string | null;
   }>;
 };
 
@@ -80,6 +82,8 @@ function mapDeal(row: DealRow): FlightDeal {
           caption: latestPost.caption,
           imagePath: latestPost.image_path,
           status: latestPost.status,
+          permalink: latestPost.instagram_permalink,
+          publishedAt: latestPost.published_at,
         }
       : undefined,
     bookingUrl: row.booking_url ?? undefined,
@@ -107,7 +111,7 @@ const dealSelect = `
   status,
   booking_url,
   airport_comparisons ( airport, price ),
-  instagram_posts ( id, caption, image_path, status, created_at )
+  instagram_posts ( id, caption, image_path, status, created_at, instagram_permalink, published_at )
 `;
 
 export class SupabaseAirfareProvider implements AirfareProvider {

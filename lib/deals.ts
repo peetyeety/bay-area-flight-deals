@@ -19,6 +19,8 @@ export type InstagramPostDraft = {
   caption: string;
   imagePath: string | null;
   status: 'draft' | 'approved' | 'publishing' | 'published' | 'failed';
+  permalink?: string | null;
+  publishedAt?: string | null;
 };
 
 export type FlightDeal = {

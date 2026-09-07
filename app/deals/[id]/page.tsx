@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!deal) return { title: 'Deal not found', openGraph: { images: [] }, twitter: { images: [] } };
   const description = `$${deal.price} round trip from ${deal.origin} to ${deal.destinationCity}, ${deal.percentBelowTypical}% below typical.`;
   return {
-    title: `${deal.origin} → ${deal.destinationCity} for $${deal.price} | Local Flight Deals`,
+    title: `${deal.origin} → ${deal.destinationCity} for $${deal.price} | Bay Area Flight Deals`,
     description,
     openGraph: { title: `${deal.origin} → ${deal.destinationCity} for $${deal.price}`, description, images: [] },
     twitter: { card: 'summary', title: `${deal.origin} → ${deal.destinationCity} for $${deal.price}`, description, images: [] },

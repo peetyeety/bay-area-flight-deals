@@ -62,9 +62,9 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <Link href="/deals" className="brand" aria-label="Local Flight Deals home">
-          <span className="brand-mark">LF</span>
-          <span><strong>LOCAL</strong><small>FLIGHT DEALS</small></span>
+        <Link href="/deals" className="brand" aria-label="Bay Area Flight Deals home">
+          <span className="brand-mark">BA</span>
+          <span><strong>BAY AREA</strong><small>FLIGHT DEALS</small></span>
         </Link>
         <nav className="side-nav" aria-label="Main navigation">
           <p>WORKSPACE</p>
