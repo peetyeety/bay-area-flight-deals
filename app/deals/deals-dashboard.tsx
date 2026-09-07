@@ -89,7 +89,7 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
       <section className="workspace">
         <header className="topbar">
           <div className="breadcrumbs"><span>Bay Area</span><b>/</b><strong>Deal queue</strong></div>
-          <div className="top-actions"><button aria-label="Notifications">♢<i /></button><SignOutButton /><span className="avatar">PL</span></div>
+          <div className="top-actions"><Link href="/flights" className="view-public-link" target="_blank">View public site ↗</Link><button aria-label="Notifications">♢<i /></button><SignOutButton /><span className="avatar">PL</span></div>
         </header>
 
         <div className="content-wrap">

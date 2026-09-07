@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getAdminUser } from '../../lib/auth';
 import LoginForm from './login-form';
 
@@ -15,6 +16,7 @@ export default async function LoginPage() {
         <h1>Welcome back.</h1>
         <p className="login-copy">Enter the authorized administrator email. We’ll send a one-time secure link—no password required.</p>
         <LoginForm />
+        <Link className="public-site-link" href="/flights">← Return to public flight deals</Link>
       </section>
     </main>
   );

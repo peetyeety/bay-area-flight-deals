@@ -116,3 +116,114 @@ footer { padding: 17px 3px 0; display: flex; justify-content: space-between; col
 @media (max-width: 580px) {
   .review-topbar { padding: 0 16px; }.review-brand strong, .mock-pill { display: none; }.review-wrap { padding-inline: 16px; }.deal-hero { align-items: center; }.hero-score { width: 82px; height: 82px; }.hero-score strong { font-size: 29px; }.fare-summary { display: block; }.fare-price { border-right: 0; border-bottom: 1px solid #ebeeee; }.fare-facts { grid-template-columns: 1fr 1fr; }.review-sidebar { grid-template-columns: 1fr; }.studio-head { align-items: flex-start; gap: 15px; flex-direction: column; }.studio-grid { grid-template-columns: minmax(0, 1fr); }.comparison-list > div { grid-template-columns: 44px 1fr auto; }
 }
+
+.public-site-link { display: inline-flex; margin-top: 22px; color: #7a868d; font-size: 10px; font-weight: 700; }
+.public-site-link:hover { color: var(--coral); }
+.view-public-link { padding: 7px 10px; border: 1px solid #d9dfe1; border-radius: 7px; color: #68757d; font-size: 10px; font-weight: 700; }
+.view-public-link:hover { border-color: #efad9f; color: var(--coral-dark); }
+
+/* Public flight board */
+.public-page { min-height: 100vh; background: #f5f3ee; color: #192128; }
+.public-nav { max-width: 1200px; height: 82px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+.public-brand { display: flex; align-items: center; gap: 11px; }
+.public-brand > span { width: 39px; height: 39px; border-radius: 11px; display: grid; place-items: center; background: var(--coral); color: white; font: 800 12px var(--font-display); transform: rotate(-3deg); }
+.public-brand strong { display: flex; flex-direction: column; color: #1d262b; font: 800 12px var(--font-display); letter-spacing: .11em; }
+.public-brand small { margin-top: 3px; color: #7f8a8f; font: 600 8px var(--font-body); letter-spacing: .18em; }
+.instagram-link { padding: 9px 12px; border: 1px solid #d9d7d0; border-radius: 20px; background: #ffffff73; color: #536067; font-size: 10px; font-weight: 800; }
+.instagram-link:hover { border-color: #efad9f; color: var(--coral-dark); }
+.public-hero { max-width: 1200px; min-height: 420px; margin: 0 auto; padding: 58px 28px 62px; display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 60px; }
+.public-kicker, .section-label { margin: 0; color: #7f898e; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+.public-kicker { display: flex; align-items: center; gap: 8px; }
+.public-kicker span { width: 7px; height: 7px; border-radius: 50%; background: #35a276; box-shadow: 0 0 0 4px #35a27618; }
+.public-hero h1 { margin: 15px 0; font-size: clamp(46px, 6vw, 76px); line-height: .98; letter-spacing: -.065em; }
+.public-hero h1 em { color: var(--coral); font-style: normal; }
+.public-hero-copy > p:last-child { max-width: 570px; margin: 0; color: #68747a; font-size: 15px; line-height: 1.65; }
+.airport-cluster { min-height: 260px; position: relative; display: grid; place-items: center; }
+.airport-cluster::before { content: ''; position: absolute; width: 255px; height: 255px; border: 1px solid #d9d6cd; border-radius: 50%; }
+.airport-cluster::after { content: ''; position: absolute; width: 170px; height: 170px; border: 1px dashed #d4d0c6; border-radius: 50%; }
+.airport-cluster > div { z-index: 1; position: absolute; width: 112px; height: 112px; padding: 17px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 14px 34px #27313918; }
+.airport-cluster > div:nth-child(1) { top: 0; left: calc(50% - 56px); background: #192128; color: white; }
+.airport-cluster > div:nth-child(2) { bottom: 3px; left: 18%; background: var(--coral); color: white; }
+.airport-cluster > div:nth-child(3) { bottom: 3px; right: 18%; background: #f7c85f; color: #3c321c; }
+.airport-cluster span { font: 800 24px var(--font-display); letter-spacing: -.04em; }
+.airport-cluster small { margin-top: 2px; opacity: .7; font-size: 8px; }
+.public-deals-wrap { padding: 62px max(28px, calc((100vw - 1144px) / 2)) 75px; background: white; border-radius: 30px 30px 0 0; }
+.public-deals-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; }
+.public-deals-head h2 { margin: 5px 0 3px; font: 800 clamp(27px, 4vw, 38px) var(--font-display); letter-spacing: -.045em; }
+.public-deals-head > div > p:last-child { margin: 0; color: #849096; font-size: 10px; }
+.public-filters { display: flex; align-items: flex-end; gap: 9px; }
+.public-filters label { min-width: 138px; color: #8d979c; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.public-filters select { width: 100%; height: 42px; margin-top: 5px; padding: 0 11px; border: 1px solid #e0e4e4; border-radius: 8px; outline: 0; background: white; color: #354047; font-size: 10px; font-weight: 700; }
+.public-filters button { height: 42px; padding: 0 17px; border: 0; border-radius: 8px; background: #202a31; color: white; font-size: 10px; font-weight: 800; cursor: pointer; }
+.public-filters button:hover { background: #11191e; }
+.public-deal-grid { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.public-deal-card { position: relative; min-width: 0; padding: 22px; overflow: hidden; border: 1px solid #e4e7e6; border-radius: 16px; background: #fbfbfa; transition: transform .18s ease, box-shadow .18s ease; }
+.public-deal-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px #202a3110; }
+.destination-mark { position: absolute; top: -29px; right: -23px; width: 112px; height: 112px; border-radius: 50%; display: grid; place-items: end start; padding: 0 0 22px 20px; background: #dcefe6; color: #428466; opacity: .82; }
+.destination-mark.europe { background: #e5e7f7; color: #626aa5; }
+.destination-mark.asia { background: #fae2db; color: #bc604e; }
+.destination-mark.oceania { background: #dcecf4; color: #4e8199; }
+.destination-mark span { font: 800 15px var(--font-display); }
+.deal-card-topline { min-height: 29px; padding-right: 78px; display: flex; align-items: center; gap: 7px; }
+.savings-pill { padding: 6px 8px; border-radius: 15px; background: #e7f5ed; color: #21865f; font-size: 8px; font-weight: 800; white-space: nowrap; }
+.trip-type { color: #8c969a; font-size: 8px; font-weight: 700; white-space: nowrap; }
+.public-route { margin: 27px 0 0; display: flex; align-items: center; gap: 10px; color: var(--coral); }
+.public-route strong { font: 800 25px var(--font-display); letter-spacing: -.045em; }
+.public-route span { color: #c2c8ca; font-size: 20px; }
+.public-deal-card h3 { margin: 10px 0 0; font: 800 20px var(--font-display); letter-spacing: -.035em; }
+.destination-country { margin: 2px 0 0; color: #8a9499; font-size: 10px; }
+.public-price-row { margin-top: 22px; padding: 17px 0; border-top: 1px solid #e6e9e8; border-bottom: 1px solid #e6e9e8; display: flex; align-items: flex-end; justify-content: space-between; }
+.public-price-row > div { display: flex; flex-direction: column; }
+.public-price-row > div:last-child { text-align: right; }
+.public-price-row strong { font: 800 30px/1 var(--font-display); letter-spacing: -.05em; }
+.public-price-row span { margin-top: 4px; color: #8c969b; font-size: 8px; }
+.public-price-row s { margin-top: 3px; color: #7d898f; font-size: 12px; font-weight: 700; }
+.public-trip-facts { margin: 16px 0 0; display: grid; grid-template-columns: 1.15fr .85fr; gap: 10px; }
+.public-trip-facts div { min-width: 0; }
+.public-trip-facts dt { color: #9ba4a8; font-size: 7px; font-weight: 800; letter-spacing: .1em; }
+.public-trip-facts dd { margin: 4px 0 0; overflow: hidden; color: #3e494f; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.fare-timestamp { margin: 17px 0 12px; color: #929ca0; font-size: 8px; }
+.fare-timestamp time { color: #69757b; font-weight: 700; }
+.check-fare-button { width: 100%; height: 43px; border-radius: 9px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: var(--coral); color: white; font-size: 10px; font-weight: 800; box-shadow: 0 7px 16px #e8594123; }
+.check-fare-button:hover { background: var(--coral-dark); }
+.check-fare-button.unavailable { justify-content: center; background: #ecefef; color: #9aa3a7; box-shadow: none; }
+.public-empty-state { margin-top: 28px; padding: 65px 24px; border: 1px dashed #d9dedd; border-radius: 16px; background: #fafbfa; text-align: center; }
+.public-empty-state > span { width: 42px; height: 42px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: #fff0ec; color: var(--coral); }
+.public-empty-state h3 { margin: 15px 0 6px; font: 800 18px var(--font-display); }
+.public-empty-state p { margin: 0 auto; max-width: 450px; color: #7f898e; font-size: 11px; line-height: 1.6; }
+.public-empty-state a { display: inline-flex; margin-top: 15px; color: var(--coral-dark); font-size: 10px; font-weight: 800; }
+.public-trust-note { max-width: 1144px; margin: 0 auto; padding: 28px; border-bottom: 1px solid #dcdad4; display: grid; grid-template-columns: 160px 1fr; gap: 25px; color: #667279; }
+.public-trust-note strong { color: #283238; font: 800 13px var(--font-display); }
+.public-trust-note p { margin: 0; font-size: 10px; line-height: 1.65; }
+.public-footer { max-width: 1200px; min-height: 130px; margin: 0 auto; padding: 30px 28px; display: flex; align-items: center; justify-content: space-between; color: #899397; font-size: 9px; }
+.public-footer div { display: flex; flex-direction: column; }
+.public-footer strong { color: #39444a; font: 800 10px var(--font-display); letter-spacing: .1em; }
+.public-footer div span { margin-top: 3px; }
+
+@media (max-width: 940px) {
+  .public-deal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-hero { grid-template-columns: 1fr 320px; gap: 30px; }
+  .airport-cluster > div:nth-child(2) { left: 8%; }
+  .airport-cluster > div:nth-child(3) { right: 8%; }
+}
+@media (max-width: 720px) {
+  .public-nav { height: 72px; padding-inline: 18px; }
+  .public-hero { min-height: 0; padding: 46px 20px 54px; display: block; }
+  .public-hero h1 { font-size: clamp(47px, 15vw, 68px); }
+  .airport-cluster { max-width: 340px; min-height: 245px; margin: 48px auto 0; }
+  .public-deals-wrap { padding: 44px 18px 55px; border-radius: 22px 22px 0 0; }
+  .public-deals-head { align-items: flex-start; flex-direction: column; }
+  .public-filters { width: 100%; }
+  .public-filters label { min-width: 0; flex: 1; }
+  .public-deal-grid { grid-template-columns: 1fr; }
+  .public-trust-note { margin-inline: 18px; padding-inline: 0; grid-template-columns: 1fr; gap: 7px; }
+  .public-footer { min-height: 110px; padding-inline: 18px; align-items: flex-start; flex-direction: column; justify-content: center; gap: 12px; }
+}
+@media (max-width: 430px) {
+  .instagram-link { padding: 8px 9px; font-size: 9px; }
+  .public-filters { align-items: stretch; flex-direction: column; }
+  .public-filters button { width: 100%; }
+  .airport-cluster > div:nth-child(2) { left: 3%; }
+  .airport-cluster > div:nth-child(3) { right: 3%; }
+  .public-deal-card { padding: 20px; }
+}
