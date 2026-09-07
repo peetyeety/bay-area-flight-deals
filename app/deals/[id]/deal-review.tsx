@@ -30,7 +30,7 @@ function hashtagLine(deal: FlightDeal) {
   return `#BayAreaFlights #BayAreaTravel #FlightDeals #AirfareDeals #CheapFlights #TravelDeals #${cityTag} #${cityTag}Travel #CaliforniaTravel #${deal.origin}Flights`;
 }
 
-function refreshCaption(deal: FlightDeal, caption: string) {
+function refreshCaption(deal: FlightDeal, caption: string, photo?: Omit<DestinationPhoto, 'image'>) {
   const cleanedCaption = caption
     .split('\n')
     .filter((line) => !line.startsWith(PHOTO_CREDIT_PREFIX))
@@ -38,7 +38,8 @@ function refreshCaption(deal: FlightDeal, caption: string) {
     .filter((line) => !line.includes('link in @bayflightdeals') && !line.includes('bio for all current Bay Area flight deals'))
     .join('\n')
     .trim();
-  return `${cleanedCaption}\n\n${BIO_LINK_LINE}\n\n${hashtagLine(deal)}`;
+  const photoCredit = photo ? `\n\n${PHOTO_CREDIT_PREFIX}${photo.photographer} via Pexels — ${photo.photoUrl}` : '';
+  return `${cleanedCaption}\n\n${BIO_LINK_LINE}\n\n${hashtagLine(deal)}${photoCredit}`;
 }
 
 function buildCaption(deal: FlightDeal) {
@@ -217,20 +218,6 @@ function drawPost(canvas: HTMLCanvasElement, deal: FlightDeal, destinationPhoto?
   context.font = '700 22px Arial';
   context.textAlign = 'left';
   context.fillText('@BAYFLIGHTDEALS', 68, 1307);
-
-  if (destinationPhoto) {
-    const photoCredit = `PHOTO: ${destinationPhoto.photographer.toUpperCase()} VIA PEXELS`;
-    context.font = '700 14px Arial';
-    const creditWidth = Math.min(context.measureText(photoCredit).width, 340);
-    context.fillStyle = 'rgba(20, 27, 31, 0.72)';
-    context.beginPath();
-    context.roundRect(1012 - creditWidth - 22, 1277, creditWidth + 34, 42, 7);
-    context.fill();
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'right';
-    context.fillText(photoCredit, 1000, 1304, 340);
-    context.textAlign = 'left';
-  }
 }
 
 export default function DealReview({ deal }: Props) {
@@ -283,6 +270,7 @@ export default function DealReview({ deal }: Props) {
     loadDestinationPhoto().then((photo) => {
       if (!active || !photo) return;
       setPhotoCredit(photo);
+      setCaption((currentCaption) => refreshCaption(deal, currentCaption, photo));
       drawPost(canvas, deal, photo);
     });
     return () => { active = false; };
@@ -326,7 +314,7 @@ export default function DealReview({ deal }: Props) {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error('The image preview could not be created.');
       const photo = await loadDestinationPhoto();
-      const nextCaption = refreshCaption(deal, caption);
+      const nextCaption = refreshCaption(deal, caption, photo ?? undefined);
       if (photo) {
         setPhotoCredit(photo);
       }
