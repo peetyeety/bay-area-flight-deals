@@ -68,7 +68,7 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
     {
       id: 'international',
       title: 'International deals',
-      description: 'Focused on Japan, South Korea, China, Hong Kong, and Taiwan',
+      description: 'Any savings for East Asia focus countries · 30%+ savings elsewhere',
       deals: visibleDeals.filter((deal) => deal.category === 'international'),
     },
     {

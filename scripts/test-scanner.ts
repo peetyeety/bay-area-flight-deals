@@ -103,8 +103,7 @@ const fakeSerpApiFetch: typeof fetch = async (input) => {
   const isWeekendSearch = url.searchParams.get('travel_duration') === '2';
   assert.equal(url.searchParams.get('engine'), 'google_flights_deals');
   assert.equal(url.searchParams.get('api_key'), 'private-key');
-  return json({
-    deals: [{
+  const primaryDeal = {
       destination_id: isWeekendSearch ? '/m/0cv3w' : '/m/07dfk',
       name: isWeekendSearch ? 'Las Vegas' : 'Tokyo',
       country: isWeekendSearch ? 'United States' : 'Japan',
@@ -114,19 +113,25 @@ const fakeSerpApiFetch: typeof fetch = async (input) => {
       return_date: isWeekendSearch ? '2026-10-12' : '2026-10-17',
       price: origin === 'OAK' ? 190 : origin === 'SJC' ? 198 : 220,
       average_price: 400,
-      discount_percentage: origin === 'OAK' ? 53 : origin === 'SJC' ? 51 : 45,
+      discount_percentage: isWeekendSearch ? (origin === 'OAK' ? 53 : origin === 'SJC' ? 51 : 45) : 5,
       stops: 0,
       airline: 'Southwest',
       airline_code: 'WN',
       flight_link: 'https://www.google.com/travel/flights',
-    }],
+  };
+  return json({
+    deals: isWeekendSearch ? [primaryDeal] : [
+      primaryDeal,
+      { ...primaryDeal, destination_id: '/m/05qtj', name: 'Paris', country: 'France', arrival_airport_code: 'CDG', discount_percentage: 20 },
+      { ...primaryDeal, destination_id: '/m/06c62', name: 'Rome', country: 'Italy', arrival_airport_code: 'FCO', discount_percentage: 35 },
+    ],
   });
 };
 
-const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 6, minimumDiscountPercent: 30 }, fakeSerpApiFetch);
+const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 9, minimumDiscountPercent: 30 }, fakeSerpApiFetch);
 const serpApiCandidates = await serpApiProvider.searchDeals(['SFO', 'SJC', 'OAK']);
 assert.equal(serpApiRequestCount, 6);
-assert.equal(serpApiCandidates.length, 6);
+assert.equal(serpApiCandidates.length, 9);
 assert.equal(serpApiCandidates[0].origin, 'SFO');
 assert.equal(serpApiCandidates[1].origin, 'SJC');
 assert.equal(serpApiCandidates[2].origin, 'OAK');
@@ -134,6 +139,9 @@ assert.equal(serpApiCandidates[2].price, 190);
 assert.equal(serpApiCandidates[2].typicalPrice, 400);
 assert.equal(serpApiCandidates[2].percentBelowTypical, 53);
 assert.equal(serpApiCandidates[2].bookingUrl, 'https://www.google.com/travel/flights');
+assert.equal(serpApiCandidates.filter((candidate) => candidate.destinationCountry === 'Japan').length, 3);
+assert.equal(serpApiCandidates.filter((candidate) => candidate.destinationCountry === 'France').length, 0);
+assert.equal(serpApiCandidates.filter((candidate) => candidate.destinationCountry === 'Italy').length, 3);
 assert.match(serpApiCandidates[0].providerReference, /\/m\//);
 assert.doesNotMatch(scannedDealId(serpApiProvider, serpApiCandidates[0]), /\//);
 

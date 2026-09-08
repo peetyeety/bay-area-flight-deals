@@ -92,7 +92,7 @@ export default async function PublicFlightsPage({ searchParams }: PageProps) {
       id: 'international-deals',
       eyebrow: 'ACROSS THE PACIFIC',
       title: 'International deals',
-      description: 'Our current focus: Japan, South Korea, China, Hong Kong, and Taiwan.',
+      description: 'Any below-typical fare to Japan, South Korea, China, Hong Kong, or Taiwan; 30%+ savings elsewhere.',
       deals: visibleDeals.filter((deal) => deal.category === 'international'),
     },
     {

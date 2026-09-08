@@ -128,9 +128,14 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
           return deal.country === 'United States'
             && dealCategoryFor(deal.country, outboundDate, returnDate) === 'weekend_getaway';
         }
-        return INTERNATIONAL_FOCUS_COUNTRIES.has(deal.country);
+        return deal.country !== 'United States';
       })
-      .filter((deal) => deal.discount_percentage >= this.config.minimumDiscountPercent)
+      .filter((deal) => {
+        if (kind === 'international' && INTERNATIONAL_FOCUS_COUNTRIES.has(deal.country)) {
+          return deal.discount_percentage > 0;
+        }
+        return deal.discount_percentage >= this.config.minimumDiscountPercent;
+      })
       .map((deal): FareCandidate => {
         const outboundDate = deal.outbound_date ?? deal.start_date ?? '';
         const returnDate = deal.return_date ?? deal.end_date ?? '';
