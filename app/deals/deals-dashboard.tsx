@@ -38,10 +38,10 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
     setScanMessage('');
     try {
       const response = await fetch('/api/scans', { method: 'POST' });
-      const result = await response.json() as { candidatesFound?: number; observationsSaved?: number; error?: string };
+      const result = await response.json() as { candidatesFound?: number; weekendGetaways?: number; internationalDeals?: number; observationsSaved?: number; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The test scan failed.');
       setLastRun('just now');
-      setScanMessage(`${liveScanner ? 'Live' : 'Test'} scan complete: ${result.candidatesFound} candidates checked and ${result.observationsSaved} observations saved.`);
+      setScanMessage(`${liveScanner ? 'Live' : 'Test'} scan complete: ${result.weekendGetaways ?? 0} weekend getaways and ${result.internationalDeals ?? 0} international deals found.`);
       router.refresh();
     } catch (error) {
       setScanMessage(error instanceof Error ? error.message : 'The test scan failed.');
@@ -58,6 +58,26 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
       return b.score - a.score;
     });
   }, [deals, origin, sortMode]);
+  const dealGroups = [
+    {
+      id: 'weekend',
+      title: 'Weekend getaways',
+      description: 'Friday or Saturday departures · Sunday or Monday returns',
+      deals: visibleDeals.filter((deal) => deal.category === 'weekend_getaway'),
+    },
+    {
+      id: 'international',
+      title: 'International deals',
+      description: 'Focused on Japan, South Korea, China, Hong Kong, and Taiwan',
+      deals: visibleDeals.filter((deal) => deal.category === 'international'),
+    },
+    {
+      id: 'other',
+      title: 'More deals',
+      description: 'Additional fares from the current queue',
+      deals: visibleDeals.filter((deal) => !deal.category || deal.category === 'other'),
+    },
+  ].filter((group) => group.id !== 'other' || group.deals.length > 0);
 
   return (
     <main className="app-shell">
@@ -120,17 +140,23 @@ export default function DealsDashboard({ deals, scanProvider }: Props) {
               </div>
             </div>
             <div className="deal-table" role="table" aria-label="Flight deal candidates">
-              <div className="table-head" role="row"><span>DEAL</span><span>TRIP</span><span>FARE</span><span>SAVINGS</span><span>SCORE</span><span /></div>
-              {visibleDeals.map((deal) => (
-                <Link href={`/deals/${deal.id}`} className="deal-row" key={deal.id} role="row">
-                  <span className={`place-icon ${deal.region.toLowerCase()}`}>{deal.destinationAirport.slice(0, 1)}</span>
-                  <span className="deal-name"><strong>{deal.destinationCity}</strong><small>{deal.origin} <i>→</i> {deal.destinationAirport} · {deal.destinationCountry}</small></span>
-                  <span className="trip"><strong>{deal.outboundDate}–{deal.returnDate}</strong><small>{deal.nonstop ? 'Nonstop' : '1 stop'} · {deal.airline}</small></span>
-                  <span className="fare"><strong>${deal.price}</strong><small>round trip</small></span>
-                  <span className="savings"><strong>{deal.percentBelowTypical}%</strong><small>typical ${deal.typicalPrice}</small></span>
-                  <span className={`score score-${Math.floor(deal.score / 10)}`}><strong>{deal.score}</strong><small>/ 100</small></span>
-                  <span className="row-arrow">›</span>
-                </Link>
+              {dealGroups.map((group) => (
+                <section className="queue-section" key={group.id} aria-labelledby={`queue-${group.id}`}>
+                  <div className="queue-section-heading"><div><h3 id={`queue-${group.id}`}>{group.title}</h3><p>{group.description}</p></div><strong>{group.deals.length}</strong></div>
+                  <div className="table-head" role="row"><span>DEAL</span><span>TRIP</span><span>FARE</span><span>SAVINGS</span><span>SCORE</span><span /></div>
+                  {!group.deals.length && <p className="queue-section-empty">No qualifying deals in this section from the latest scan.</p>}
+                  {group.deals.map((deal) => (
+                    <Link href={`/deals/${deal.id}`} className="deal-row" key={deal.id} role="row">
+                      <span className={`place-icon ${deal.region.toLowerCase()}`}>{deal.destinationAirport.slice(0, 1)}</span>
+                      <span className="deal-name"><strong>{deal.destinationCity}</strong><small>{deal.origin} <i>→</i> {deal.destinationAirport} · {deal.destinationCountry}</small></span>
+                      <span className="trip"><strong>{deal.outboundDate}–{deal.returnDate}</strong><small>{deal.category === 'weekend_getaway' ? 'Weekend getaway' : deal.nonstop ? 'Nonstop' : '1 stop'} · {deal.airline}</small></span>
+                      <span className="fare"><strong>${deal.price}</strong><small>round trip</small></span>
+                      <span className="savings"><strong>{deal.percentBelowTypical}%</strong><small>typical ${deal.typicalPrice}</small></span>
+                      <span className={`score score-${Math.floor(deal.score / 10)}`}><strong>{deal.score}</strong><small>/ 100</small></span>
+                      <span className="row-arrow">›</span>
+                    </Link>
+                  ))}
+                </section>
               ))}
             </div>
           </section>

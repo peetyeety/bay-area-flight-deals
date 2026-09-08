@@ -14,6 +14,28 @@ export type DealStatus =
   | 'published'
   | 'expired';
 
+export type DealCategory = 'weekend_getaway' | 'international' | 'other';
+
+export const INTERNATIONAL_FOCUS_COUNTRIES = new Set([
+  'Japan',
+  'South Korea',
+  'China',
+  'Hong Kong',
+  'Taiwan',
+]);
+
+export function dealCategoryFor(destinationCountry: string, outboundDate?: string | null, returnDate?: string | null): DealCategory {
+  if (destinationCountry !== 'United States') return 'international';
+  if (!outboundDate || !returnDate) return 'other';
+
+  const outboundDay = new Date(`${outboundDate}T00:00:00Z`).getUTCDay();
+  const returnDay = new Date(`${returnDate}T00:00:00Z`).getUTCDay();
+  const tripDays = Math.round((new Date(`${returnDate}T00:00:00Z`).getTime() - new Date(`${outboundDate}T00:00:00Z`).getTime()) / 86_400_000);
+  return [5, 6].includes(outboundDay) && [0, 1].includes(returnDay) && tripDays >= 1 && tripDays <= 3
+    ? 'weekend_getaway'
+    : 'other';
+}
+
 export type InstagramPostDraft = {
   id: string;
   caption: string;
@@ -45,6 +67,7 @@ export type FlightDeal = {
   seenAgo: string;
   comparison: AirportComparison[];
   status?: DealStatus;
+  category?: DealCategory;
   latestPost?: InstagramPostDraft;
   bookingUrl?: string;
 };

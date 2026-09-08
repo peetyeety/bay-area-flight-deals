@@ -100,17 +100,18 @@ const fakeSerpApiFetch: typeof fetch = async (input) => {
   serpApiRequestCount += 1;
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input : input.url);
   const origin = url.searchParams.get('departure_id') ?? 'SFO';
+  const isWeekendSearch = url.searchParams.get('travel_duration') === '2';
   assert.equal(url.searchParams.get('engine'), 'google_flights_deals');
   assert.equal(url.searchParams.get('api_key'), 'private-key');
   return json({
     deals: [{
-      destination_id: '/m/05qtj',
-      name: 'Honolulu',
-      country: 'United States',
+      destination_id: isWeekendSearch ? '/m/0cv3w' : '/m/07dfk',
+      name: isWeekendSearch ? 'Las Vegas' : 'Tokyo',
+      country: isWeekendSearch ? 'United States' : 'Japan',
       departure_airport_code: origin,
-      arrival_airport_code: 'HNL',
-      outbound_date: '2026-10-10',
-      return_date: '2026-10-17',
+      arrival_airport_code: isWeekendSearch ? 'LAS' : 'NRT',
+      outbound_date: isWeekendSearch ? '2026-10-09' : '2026-10-10',
+      return_date: isWeekendSearch ? '2026-10-12' : '2026-10-17',
       price: origin === 'OAK' ? 190 : origin === 'SJC' ? 198 : 220,
       average_price: 400,
       discount_percentage: origin === 'OAK' ? 53 : origin === 'SJC' ? 51 : 45,
@@ -122,10 +123,10 @@ const fakeSerpApiFetch: typeof fetch = async (input) => {
   });
 };
 
-const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 3, minimumDiscountPercent: 30 }, fakeSerpApiFetch);
+const serpApiProvider = new SerpApiFlightDataProvider({ apiKey: 'private-key', maxDeals: 6, minimumDiscountPercent: 30 }, fakeSerpApiFetch);
 const serpApiCandidates = await serpApiProvider.searchDeals(['SFO', 'SJC', 'OAK']);
-assert.equal(serpApiRequestCount, 3);
-assert.equal(serpApiCandidates.length, 3);
+assert.equal(serpApiRequestCount, 6);
+assert.equal(serpApiCandidates.length, 6);
 assert.equal(serpApiCandidates[0].origin, 'SFO');
 assert.equal(serpApiCandidates[1].origin, 'SJC');
 assert.equal(serpApiCandidates[2].origin, 'OAK');
@@ -136,4 +137,4 @@ assert.equal(serpApiCandidates[2].bookingUrl, 'https://www.google.com/travel/fli
 assert.match(serpApiCandidates[0].providerReference, /\/m\//);
 assert.doesNotMatch(scannedDealId(serpApiProvider, serpApiCandidates[0]), /\//);
 
-console.log('Scanner tests passed: provider normalization, three-airport discovery, and deal scoring are working.');
+console.log('Scanner tests passed: provider normalization, focused weekend/international discovery, and deal scoring are working.');

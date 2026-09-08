@@ -1,4 +1,4 @@
-import type { AirportCode, FlightDeal } from '../deals.ts';
+import { INTERNATIONAL_FOCUS_COUNTRIES, dealCategoryFor, type AirportCode, type FlightDeal } from '../deals.ts';
 import type { FareCandidate, FlightDataProvider } from './types.ts';
 
 type SerpApiDeal = {
@@ -9,6 +9,8 @@ type SerpApiDeal = {
   arrival_airport_code?: string;
   outbound_date?: string;
   return_date?: string;
+  start_date?: string;
+  end_date?: string;
   price?: number;
   average_price?: number;
   discount_percentage?: number;
@@ -29,6 +31,8 @@ type SerpApiConfig = {
   maxPrice?: number;
   minimumDiscountPercent: number;
 };
+
+type SearchKind = 'weekend' | 'international';
 
 const asiaCountries = new Set([
   'China', 'Hong Kong', 'India', 'Indonesia', 'Israel', 'Japan', 'Malaysia', 'Philippines',
@@ -53,8 +57,6 @@ function isCompleteDeal(value: SerpApiDeal): value is SerpApiDeal & {
   country: string;
   departure_airport_code: AirportCode;
   arrival_airport_code: string;
-  outbound_date: string;
-  return_date: string;
   price: number;
   average_price: number;
   discount_percentage: number;
@@ -64,14 +66,26 @@ function isCompleteDeal(value: SerpApiDeal): value is SerpApiDeal & {
     && value.country
     && value.departure_airport_code
     && value.arrival_airport_code
-    && value.outbound_date
-    && value.return_date
+    && (value.outbound_date || value.start_date)
+    && (value.return_date || value.end_date)
     && Number.isFinite(value.price)
     && Number(value.price) > 0
     && Number.isFinite(value.average_price)
     && Number(value.average_price) > 0
     && Number.isFinite(value.discount_percentage),
   );
+}
+
+function isoDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function searchWindow(kind: SearchKind) {
+  const start = new Date();
+  start.setUTCDate(start.getUTCDate() + (kind === 'weekend' ? 5 : 14));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + (kind === 'weekend' ? 120 : 210));
+  return `${isoDate(start)},${isoDate(end)}`;
 }
 
 export class SerpApiFlightDataProvider implements FlightDataProvider {
@@ -84,7 +98,7 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
     this.fetcher = fetcher;
   }
 
-  private async discover(origin: AirportCode) {
+  private async discover(origin: AirportCode, kind: SearchKind) {
     const params: Record<string, string> = {
       engine: 'google_flights_deals',
       departure_id: origin,
@@ -92,8 +106,11 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
       gl: 'us',
       hl: 'en',
       type: '1',
+      outbound_date: searchWindow(kind),
       api_key: this.config.apiKey,
     };
+    if (kind === 'weekend') params.travel_duration = '2';
+    if (kind === 'international') params.trip_length = '5,14';
     if (this.config.maxPrice) params.max_price = String(this.config.maxPrice);
 
     const response = await this.fetcher(`https://serpapi.com/search.json?${new URLSearchParams(params)}`);
@@ -104,39 +121,60 @@ export class SerpApiFlightDataProvider implements FlightDataProvider {
 
     return (payload.deals ?? [])
       .filter(isCompleteDeal)
+      .filter((deal) => {
+        const outboundDate = deal.outbound_date ?? deal.start_date;
+        const returnDate = deal.return_date ?? deal.end_date;
+        if (kind === 'weekend') {
+          return deal.country === 'United States'
+            && dealCategoryFor(deal.country, outboundDate, returnDate) === 'weekend_getaway';
+        }
+        return INTERNATIONAL_FOCUS_COUNTRIES.has(deal.country);
+      })
       .filter((deal) => deal.discount_percentage >= this.config.minimumDiscountPercent)
-      .map((deal): FareCandidate => ({
-        providerReference: `${deal.departure_airport_code}-${deal.destination_id ?? deal.arrival_airport_code}-${deal.outbound_date}-${deal.return_date}`,
-        origin: deal.departure_airport_code,
-        destinationAirport: deal.arrival_airport_code,
-        destinationCity: deal.name,
-        destinationCountry: deal.country,
-        region: regionFor(deal.country),
-        price: Math.round(deal.price),
-        currency: 'USD',
-        typicalPrice: Math.round(deal.average_price),
-        percentBelowTypical: Math.round(deal.discount_percentage),
-        airline: deal.airline ?? deal.airline_code ?? 'Carrier not confirmed',
-        nonstop: deal.stops === 0,
-        outboundDate: deal.outbound_date,
-        returnDate: deal.return_date,
-        bookingUrl: deal.flight_link,
-        rawPayload: deal,
-      }));
+      .map((deal): FareCandidate => {
+        const outboundDate = deal.outbound_date ?? deal.start_date ?? '';
+        const returnDate = deal.return_date ?? deal.end_date ?? '';
+        return {
+          providerReference: `${deal.departure_airport_code}-${deal.destination_id ?? deal.arrival_airport_code}-${outboundDate}-${returnDate}`,
+          origin: deal.departure_airport_code,
+          destinationAirport: deal.arrival_airport_code,
+          destinationCity: deal.name,
+          destinationCountry: deal.country,
+          region: regionFor(deal.country),
+          price: Math.round(deal.price),
+          currency: 'USD',
+          typicalPrice: Math.round(deal.average_price),
+          percentBelowTypical: Math.round(deal.discount_percentage),
+          airline: deal.airline ?? deal.airline_code ?? 'Carrier not confirmed',
+          nonstop: deal.stops === 0,
+          outboundDate,
+          returnDate,
+          bookingUrl: deal.flight_link,
+          rawPayload: deal,
+        };
+      });
   }
 
   async searchDeals(origins: AirportCode[]) {
-    // One Deals request per origin: three API credits per complete scan.
+    // Two focused Deals requests per origin: six API credits per complete scan.
     // Fail the whole scan if an origin fails so stale-expiry remains safe.
-    const results = await Promise.all(origins.map(async (origin) => this.discover(origin)));
+    const results = await Promise.all(origins.flatMap((origin) => [
+      this.discover(origin, 'weekend'),
+      this.discover(origin, 'international'),
+    ]));
     const allCandidates = results.flat();
     const sorted = [...allCandidates].sort((a, b) =>
       (b.percentBelowTypical ?? 0) - (a.percentBelowTypical ?? 0) || a.price - b.price,
     );
     const selected: FareCandidate[] = [];
-    for (const origin of origins) {
-      const firstForOrigin = sorted.find((candidate) => candidate.origin === origin);
-      if (firstForOrigin) selected.push(firstForOrigin);
+    for (const kind of ['weekend_getaway', 'international'] as const) {
+      for (const origin of origins) {
+        const firstForOrigin = sorted.find((candidate) =>
+          candidate.origin === origin
+          && dealCategoryFor(candidate.destinationCountry, candidate.outboundDate, candidate.returnDate) === kind,
+        );
+        if (firstForOrigin && !selected.includes(firstForOrigin)) selected.push(firstForOrigin);
+      }
     }
     for (const candidate of sorted) {
       if (selected.length >= this.config.maxDeals) break;

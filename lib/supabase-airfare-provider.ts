@@ -1,4 +1,4 @@
-import type { AirportCode, AirfareProvider, DealStatus, FlightDeal } from './deals';
+import { dealCategoryFor, type AirportCode, type AirfareProvider, type DealStatus, type FlightDeal } from './deals';
 import { createSupabaseAdmin } from './supabase/admin';
 
 type DealRow = {
@@ -78,6 +78,7 @@ function mapDeal(row: DealRow): FlightDeal {
     comparison: [...row.airport_comparisons]
       .sort((a, b) => ['SFO', 'SJC', 'OAK'].indexOf(a.airport) - ['SFO', 'SJC', 'OAK'].indexOf(b.airport)),
     status: row.status,
+    category: dealCategoryFor(row.destination_country, row.outbound_date, row.return_date),
     latestPost: latestPost
       ? {
           id: latestPost.id,

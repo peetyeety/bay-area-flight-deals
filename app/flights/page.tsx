@@ -80,6 +80,29 @@ export default async function PublicFlightsPage({ searchParams }: PageProps) {
   const freshest = allDeals.reduce<string | null>((latest, deal) => (
     !latest || new Date(deal.lastSeenAt) > new Date(latest) ? deal.lastSeenAt : latest
   ), null);
+  const dealSections = [
+    {
+      id: 'weekend-getaways',
+      eyebrow: 'QUICK ESCAPES',
+      title: 'Weekend getaways',
+      description: 'Leave Friday or Saturday and return Sunday or Monday. Confirm exact flight times before booking.',
+      deals: visibleDeals.filter((deal) => deal.category === 'weekend_getaway'),
+    },
+    {
+      id: 'international-deals',
+      eyebrow: 'ACROSS THE PACIFIC',
+      title: 'International deals',
+      description: 'Our current focus: Japan, South Korea, China, Hong Kong, and Taiwan.',
+      deals: visibleDeals.filter((deal) => deal.category === 'international'),
+    },
+    {
+      id: 'more-deals',
+      eyebrow: 'MORE FROM THE BAY',
+      title: 'More flight deals',
+      description: 'Additional verified fares departing from SFO, SJC, and OAK.',
+      deals: visibleDeals.filter((deal) => deal.category === 'other'),
+    },
+  ].filter((section) => section.id !== 'more-deals' || section.deals.length > 0);
 
   return (
     <main className="public-page">
@@ -133,47 +156,57 @@ export default async function PublicFlightsPage({ searchParams }: PageProps) {
           </form>
         </div>
 
-        {visibleDeals.length ? (
-          <div className="public-deal-grid">
-            {visibleDeals.map((deal) => (
-              <article className="public-deal-card" key={deal.id}>
-                <div className={`destination-mark ${deal.region.toLowerCase()}`} aria-hidden="true">
-                  <span>{deal.destinationAirport}</span>
+        <div className="public-deal-sections">
+          {dealSections.map((section) => (
+            <section className="public-deal-section" key={section.id} aria-labelledby={section.id}>
+              <div className="public-section-heading">
+                <div><p>{section.eyebrow}</p><h3 id={section.id}>{section.title}</h3><span>{section.description}</span></div>
+                <strong>{section.deals.length} {section.deals.length === 1 ? 'deal' : 'deals'}</strong>
+              </div>
+              {section.deals.length ? (
+                <div className="public-deal-grid">
+                  {section.deals.map((deal) => (
+                    <article className="public-deal-card" key={deal.id}>
+                      <div className={`destination-mark ${deal.region.toLowerCase()}`} aria-hidden="true">
+                        <span>{deal.destinationAirport}</span>
+                      </div>
+                      <div className="deal-card-topline">
+                        <span className="savings-pill">{Math.round(deal.percentBelowTypical)}% below typical</span>
+                        <span className="trip-type">{deal.category === 'weekend_getaway' ? 'Weekend getaway' : deal.nonstop ? 'Nonstop' : 'Connecting'}</span>
+                      </div>
+                      <p className="public-route"><strong>{deal.origin}</strong><span aria-hidden="true">→</span><strong>{deal.destinationAirport}</strong></p>
+                      <h3>{deal.destinationCity}</h3>
+                      <p className="destination-country">{deal.destinationCountry}</p>
+                      <div className="public-price-row">
+                        <div><strong>{currency(deal.price, deal.currency)}</strong><span>round trip</span></div>
+                        <div><span>Typical fare</span><s>{currency(deal.typicalPrice, deal.currency)}</s></div>
+                      </div>
+                      <dl className="public-trip-facts">
+                        <div><dt>DATES</dt><dd>{tripDate(deal.outboundDate)}–{tripDate(deal.returnDate)}</dd></div>
+                        <div><dt>AIRLINE</dt><dd>{deal.airline}</dd></div>
+                      </dl>
+                      <p className="fare-timestamp">Fare last seen <time dateTime={deal.lastSeenAt}>{observedAt(deal.lastSeenAt)}</time></p>
+                      {deal.bookingUrl ? (
+                        <a className="check-fare-button" href={deal.bookingUrl} target="_blank" rel="noopener noreferrer sponsored">
+                          Check current fare <span aria-hidden="true">↗</span>
+                        </a>
+                      ) : (
+                        <span className="check-fare-button unavailable">Live search unavailable</span>
+                      )}
+                    </article>
+                  ))}
                 </div>
-                <div className="deal-card-topline">
-                  <span className="savings-pill">{Math.round(deal.percentBelowTypical)}% below typical</span>
-                  <span className="trip-type">{deal.nonstop ? 'Nonstop' : 'Connecting'}</span>
+              ) : (
+                <div className="public-empty-state">
+                  <span aria-hidden="true">✦</span>
+                  <h3>No verified deals here right now.</h3>
+                  <p>Fresh fares move quickly. Check back soon or follow @bayflightdeals for the next alert.</p>
+                  {origin !== 'ALL' && <Link href="/flights">See deals from all airports</Link>}
                 </div>
-                <p className="public-route"><strong>{deal.origin}</strong><span aria-hidden="true">→</span><strong>{deal.destinationAirport}</strong></p>
-                <h3>{deal.destinationCity}</h3>
-                <p className="destination-country">{deal.destinationCountry}</p>
-                <div className="public-price-row">
-                  <div><strong>{currency(deal.price, deal.currency)}</strong><span>round trip</span></div>
-                  <div><span>Typical fare</span><s>{currency(deal.typicalPrice, deal.currency)}</s></div>
-                </div>
-                <dl className="public-trip-facts">
-                  <div><dt>DATES</dt><dd>{tripDate(deal.outboundDate)}–{tripDate(deal.returnDate)}</dd></div>
-                  <div><dt>AIRLINE</dt><dd>{deal.airline}</dd></div>
-                </dl>
-                <p className="fare-timestamp">Fare last seen <time dateTime={deal.lastSeenAt}>{observedAt(deal.lastSeenAt)}</time></p>
-                {deal.bookingUrl ? (
-                  <a className="check-fare-button" href={deal.bookingUrl} target="_blank" rel="noopener noreferrer sponsored">
-                    Check current fare <span aria-hidden="true">↗</span>
-                  </a>
-                ) : (
-                  <span className="check-fare-button unavailable">Live search unavailable</span>
-                )}
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="public-empty-state">
-            <span aria-hidden="true">✦</span>
-            <h3>No verified deals match this view.</h3>
-            <p>Fresh fares move quickly. Check back soon or follow @bayflightdeals for the next alert.</p>
-            {origin !== 'ALL' && <Link href="/flights">See deals from all airports</Link>}
-          </div>
-        )}
+              )}
+            </section>
+          ))}
+        </div>
       </section>
 
       <section className="public-trust-note">

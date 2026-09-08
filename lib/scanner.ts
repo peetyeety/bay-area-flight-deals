@@ -1,7 +1,7 @@
 import { createSupabaseAdmin } from './supabase/admin.ts';
 import { configuredFlightProvider } from './providers/configured-provider.ts';
 import type { FlightDataProvider } from './providers/types.ts';
-import type { AirportCode } from './deals.ts';
+import { dealCategoryFor, type AirportCode } from './deals.ts';
 import { scoreDeal } from './scoring.ts';
 
 const origins: AirportCode[] = ['SFO', 'SJC', 'OAK'];
@@ -168,6 +168,12 @@ export async function runFareScan(provider: FlightDataProvider = configuredFligh
   return {
     provider: provider.name,
     candidatesFound: scoredCandidates.length,
+    weekendGetaways: scoredCandidates.filter(({ candidate }) =>
+      dealCategoryFor(candidate.destinationCountry, candidate.outboundDate, candidate.returnDate) === 'weekend_getaway',
+    ).length,
+    internationalDeals: scoredCandidates.filter(({ candidate }) =>
+      dealCategoryFor(candidate.destinationCountry, candidate.outboundDate, candidate.returnDate) === 'international',
+    ).length,
     observationsSaved: observationRows.length,
     expiredCandidates,
     completedAt: observedAt,

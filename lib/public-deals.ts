@@ -1,4 +1,4 @@
-import type { AirportCode, FlightDeal } from './deals';
+import { dealCategoryFor, type AirportCode, type DealCategory, type FlightDeal } from './deals';
 import { createSupabaseAdmin } from './supabase/admin';
 
 export type PublicFlightDeal = {
@@ -18,6 +18,7 @@ export type PublicFlightDeal = {
   returnDate: string | null;
   lastSeenAt: string;
   bookingUrl: string | null;
+  category: DealCategory;
 };
 
 type PublicDealRow = {
@@ -108,5 +109,6 @@ export async function listPublicDeals(): Promise<PublicFlightDeal[]> {
     returnDate: row.return_date,
     lastSeenAt: row.last_seen_at,
     bookingUrl: safeBookingUrl(row.booking_url),
+    category: dealCategoryFor(row.destination_country, row.outbound_date, row.return_date),
   }));
 }
